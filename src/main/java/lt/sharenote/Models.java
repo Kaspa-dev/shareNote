@@ -12,19 +12,19 @@ public final class Models {
 
     @Schema(name = "OrganizationInput")
     public record OrganizationInput(
-            @NotBlank @Size(min = 1, max = 120) @Schema(example = "KTU Informatikos fakultetas") String name,
-            @NotNull @Size(max = 2000) @Schema(example = "Studentų bendradarbiavimo erdvė") String description) {}
+            @NotBlank @Size(min = 1, max = 120) @Schema(example = "KTU Faculty of Informatics") String name,
+            @NotNull @Size(max = 2000) @Schema(example = "A collaboration space for students") String description) {}
 
     @Schema(name = "GroupInput")
     public record GroupInput(
-            @NotBlank @Size(min = 1, max = 120) @Schema(example = "Saityno technologijos") String name,
-            @NotNull @Size(max = 2000) @Schema(example = "Kurso užrašai ir laboratoriniai darbai") String description,
-            @Positive @Schema(description = "Organizacijos ID arba null savarankiškai grupei", example = "1", minimum = "1", nullable = true) Long organizationId) {}
+            @NotBlank @Size(min = 1, max = 120) @Schema(example = "Web Technologies") String name,
+            @NotNull @Size(max = 2000) @Schema(example = "Course notes and laboratory assignments") String description,
+            @Positive @Schema(description = "Organization ID, or null for a standalone group", example = "1", minimum = "1", nullable = true) Long organizationId) {}
 
     @Schema(name = "NoteInput")
     public record NoteInput(
-            @NotBlank @Size(min = 1, max = 200) @Schema(example = "HTTP metodai") String title,
-            @NotBlank @Size(min = 1, max = 20000) @Schema(example = "GET skaito, POST kuria, PUT pakeičia, DELETE šalina.") String content,
+            @NotBlank @Size(min = 1, max = 200) @Schema(example = "HTTP methods") String title,
+            @NotBlank @Size(min = 1, max = 20000) @Schema(example = "GET reads, POST creates, PUT replaces, DELETE removes.") String content,
             @NotBlank @Size(min = 1, max = 100) @Schema(example = "REST") String category,
             @NotNull @Positive @Schema(example = "1", minimum = "1") Long groupId) {}
 }

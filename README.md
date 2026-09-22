@@ -1,138 +1,63 @@
-# ShareNote — laboratorinis darbas Nr. 1
+# ShareNote
 
-REST API bendriems užrašams kurti ir sisteminti. Java 21, Spring Boot, PostgreSQL 17, Flyway ir OpenAPI. Atsakymai su turiniu yra JSON; klaidos pateikiamos `application/problem+json` formatu.
+REST API for shared notes, built with Java 21, Spring Boot, PostgreSQL 17, and Flyway.
+Includes 15 CRUD operations for **organizations, groups, and notes**. Groups may be standalone; every note belongs to a group. Authentication and membership management are outside this lab's scope.
 
-## Apimtis
+## Run
 
-Pagal laboratorinio darbo Nr. 0 aprašą pasirinkti trys resursai: **organizacijos → grupės → užrašai**. Grupė gali nepriklausyti organizacijai (`organizationId: null`), o užrašas privalo priklausyti grupei. Užrašas turi kategoriją.
+Requires Docker Desktop with Linux containers.
 
-PDF nėra konkretaus 15 HTTP metodų sąrašo. Šio darbo interpretacija: po penkis CRUD metodus kiekvienam resursui. Autentifikacija, narystės, naudotojų teisės, React klientas ir Azure diegimas lieka tolimesniems etapams; ši API jų neįgyvendina. Metodų pasirinkimą reikėtų suderinti su dėstytoju, jei buvo pateiktas atskiras jų sąrašas.
-
-## Paleidimas atsiskaitymui
-
-Reikia veikiančio **Docker Desktop** su Linux konteineriais. Demonstracijos scenarijui reikia **Node.js 18+** (arba naudokite Postman).
-
-```powershell
+```sh
 docker compose up -d --build
 ```
 
-Patogesnis Windows variantas, kuris taip pat palaukia API pasiruošimo:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start.ps1
-```
-
-Pirmą kartą atsiunčiamos priklausomybės ir Docker atvaizdai, todėl **aplinką paleiskite prieš demonstraciją**. Paleidimo laikas neįtraukiamas į 15 sekundžių demonstraciją.
+On Windows, `powershell -ExecutionPolicy Bypass -File scripts/start.ps1` also waits until the API is ready. Start the environment before the demonstration; the first build downloads dependencies.
 
 - [Swagger UI](http://localhost:8080/swagger-ui.html)
-- [OpenAPI JSON](http://localhost:8080/v3/api-docs)
-- [OpenAPI YAML](http://localhost:8080/v3/api-docs.yaml)
-- [Organizacijų sąrašas naršyklėje](http://localhost:8080/api/organizations)
+- [Live OpenAPI](http://localhost:8080/v3/api-docs) · [Saved specification](docs/openapi.json)
 
-## Visų 15 metodų demonstracija
+The database is seeded with 2 organizations, 4 groups, and 5 notes. Data persists in a Docker volume. Stop with `docker compose down`.
 
-```powershell
+## Demo
+
+With Node.js 18+ and the API running:
+
+```sh
 node scripts/demo.mjs
 ```
 
-Scenarijus sukuria organizaciją, grupę ir užrašą, patikrina visų trijų sąrašus, skaitymą, atnaujinimą bei ištrynimą. Papildomai tikrina išsaugotus laukus, filtravimą, `Location`, `Content-Type`, 400, 404, 422, 409 ir tuščią 204 atsakymą. Ištrina tik savo sukurtus duomenis. Pabaigoje išveda patikrų skaičių ir trukmę; klaidos arba >15 s trukmės atveju grąžina nenulinį išėjimo kodą. ID gaunami iš API atsakymų, todėl demonstraciją galima kartoti.
+Checks all 15 operations, response bodies, headers, and error codes, then removes its own data. The Docker demo completed 28 HTTP checks in 1.17 seconds. Set `API_URL` to use another server.
 
-Kitam serverio adresui: `$env:API_URL='http://localhost:8080'`.
+Alternatively, import the [Postman collection](docs/ShareNote.postman_collection.json) and run all requests in order with 1 iteration and 0 ms delay.
 
-**Postman alternatyva:** importuokite [kolekciją](docs/ShareNote.postman_collection.json), pasirinkite visus punktus, **Run collection**, 1 iteraciją ir 0 ms uždelsimą. `baseUrl` jau nustatytas. ID paimami iš sukūrimo atsakymų. Kiekviena užklausa turi atsako kodo ir turinio patikras. Nutraukus kolekciją anksčiau, jos sukurti duomenys gali likti DB; užbaigtas sėkmingas paleidimas juos ištrina.
+## API
 
-## 15 API metodų
+Each resource (`organizations`, `groups`, `notes`) supports:
 
-| Nr. | Metodas | Kelias | Sėkmės kodas |
-| --- | --- | --- | --- |
-| 1 | GET | `/api/organizations` | 200 |
-| 2 | GET | `/api/organizations/{id}` | 200 |
-| 3 | POST | `/api/organizations` | 201 + Location |
-| 4 | PUT | `/api/organizations/{id}` | 200 |
-| 5 | DELETE | `/api/organizations/{id}` | 204 |
-| 6 | GET | `/api/groups` | 200 |
-| 7 | GET | `/api/groups/{id}` | 200 |
-| 8 | POST | `/api/groups` | 201 + Location |
-| 9 | PUT | `/api/groups/{id}` | 200 |
-| 10 | DELETE | `/api/groups/{id}` | 204 |
-| 11 | GET | `/api/notes` | 200 |
-| 12 | GET | `/api/notes/{id}` | 200 |
-| 13 | POST | `/api/notes` | 201 + Location |
-| 14 | PUT | `/api/notes/{id}` | 200 |
-| 15 | DELETE | `/api/notes/{id}` | 204 |
+| Method | Path | Success |
+| --- | --- | --- |
+| GET | `/api/{resource}` | 200 |
+| GET | `/api/{resource}/{id}` | 200 |
+| POST | `/api/{resource}` | 201 + Location |
+| PUT | `/api/{resource}/{id}` | 200 |
+| DELETE | `/api/{resource}/{id}` | 204, empty body |
 
-Galima filtruoti: `GET /api/groups?organizationId=1`, `GET /api/notes?groupId=1`. Sąrašai rikiuojami pagal ID. Egzistuojančio resurso tuščias vaikų sąrašas yra `200 []`; neegzistuojantis filtro tėvinis resursas grąžina 404.
+Filter groups by `?organizationId=1` and notes by `?groupId=1`. PUT replaces all editable fields. Delete notes before their group, and groups before their organization.
 
-POST ir PUT payload pavyzdžiai:
+Requests and successful bodies use JSON; errors use `application/problem+json`: **400** malformed input, **404** not found, **409** relationship conflict, **415** unsupported content type, **422** validation failure. See Swagger for payloads and field limits.
 
-```json
-{ "name": "KTU Informatikos fakultetas", "description": "Studentų užrašai" }
-```
+## Development
 
-```json
-{ "name": "Saityno technologijos", "description": "Kurso medžiaga", "organizationId": 1 }
-```
-
-```json
-{ "title": "HTTP metodai", "content": "GET skaito, POST kuria.", "category": "REST", "groupId": 1 }
-```
-
-`PUT` pakeičia visus redaguojamus laukus ir nekuria neegzistuojančio resurso. Organizacijos ir grupės `name` yra 1–120 simbolių, `description` privalomas, bet gali būti tuščias (iki 2000 simbolių). Užrašo `title` yra 1–200, `content` 1–20000, `category` 1–100 simbolių. Vien tarpai nelaikomi tinkama privalomo teksto reikšme. Payload ID yra teigiami sveikieji skaičiai. Grupės `organizationId` neprivalomas; jo nepateikus arba pateikus `null`, grupė tampa savarankiška.
-
-| Kodas | Kada grąžinamas |
-| --- | --- |
-| 400 | Sugadintas JSON, neatitinkantis lauko tipas, nežinomas payload laukas arba netaisyklingas URL parametras |
-| 404 | Nerastas nurodytas resursas arba payload nurodyta organizacija / grupė |
-| 422 | Taisyklingas JSON, tačiau trūksta privalomų laukų, reikšmės tuščios, per ilgos arba ID neteigiami |
-| 409 | Organizacija turi grupių arba grupė turi užrašų; taip pat ryšių konfliktas lygiagrečių operacijų metu |
-| 415 | POST / PUT turinio tipas nėra `application/json` |
-
-Ištrynimas nekaskadinis: pirmiausia ištrinkite užrašus, tada grupę, tada organizaciją. DB išoriniai raktai ir transakcijos saugo duomenų vientisumą.
-
-## DB ir konfigūracija
-
-Flyway migracijos automatiškai sukuria lenteles ir **vieną kartą** įrašo 2 organizacijas, 4 grupes bei 5 prasmingus užrašus. PostgreSQL duomenys saugomi Docker volume ir išlieka po `docker compose down` bei pakartotinio paleidimo. Demonstracija pradinių duomenų nekeičia.
-
-Vietinė DB: `localhost:5433`, duomenų bazė ir naudotojas `sharenote`, demonstracinis slaptažodis `sharenote-local`. Compose paslaugos publikuojamos tik per `127.0.0.1`. `DB_PASSWORD` galima pakeisti `.env` faile prieš pirmą DB paleidimą; esamos DB slaptažodžio aplinkos kintamasis nepakeičia. `.env` ignoruojamas Git.
-
-API konfigūracija: `DB_URL`, `DB_USER`, `DB_PASSWORD`. Compose API viduje jungiasi prie `db:5432`.
-
-```powershell
-docker compose logs api
-docker compose down
-```
-
-## Darbas per IDE / Java
-
-Įdiekite JDK 21 ir nustatykite `JAVA_HOME`. Maven diegti nereikia: saugykloje yra Maven Wrapper.
+Requires JDK 21 (`JAVA_HOME`) and Docker. Maven Wrapper is included.
 
 ```powershell
 docker compose up -d --wait db
 ./mvnw.cmd spring-boot:run
-```
-
-Jei Compose API jau veikia, prieš paleisdami vietinį serverį vykdykite `docker compose stop api`, kad 8080 prievadas būtų laisvas. Linux/macOS naudokite `sh ./mvnw` vietoje `./mvnw.cmd`.
-
-## Testai ir OpenAPI
-
-```powershell
 ./mvnw.cmd test
 ```
 
-Integraciniai testai naudoja Testcontainers su tikru PostgreSQL 17 atskirame laikiname konteineryje; reikia veikiančio Docker. Tikrinami visi 15 metodų, duomenų išsaugojimas, priklausomybės, validacija, savarankiškos grupės ir OpenAPI operacijų skaičius. Naudotojo DB testai nekeičia.
+Run tests in another terminal. Stop the Compose API first (`docker compose stop api`) to free port 8080. On Linux/macOS, use `sh ./mvnw`. Integration tests use a separate PostgreSQL container.
 
-OpenAPI generuojama iš valdiklių anotacijų ir validacijos taisyklių. Saugykloje laikoma [eksportuota specifikacija](docs/openapi.json). Po API pakeitimų atnaujinkite ją veikiančiame serveryje:
+Local DB: `localhost:5433`, database/user `sharenote`, development password `sharenote-local`. Configure the API with `DB_URL`, `DB_USER`, and `DB_PASSWORD`; set Compose `DB_PASSWORD` in `.env` before creating the database.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/export-openapi.ps1
-```
-
-## Projekto struktūra ir Git
-
-- `src/main/java/lt/sharenote` – valdikliai, DTO, paslaugų sluoksnis ir klaidų apdorojimas.
-- `src/main/resources/db/migration` – DB schema ir pradiniai duomenys.
-- `src/test` – integraciniai testai.
-- `docs` – OpenAPI specifikacija ir Postman kolekcija.
-- `scripts` – paleidimas, demonstracija ir specifikacijos eksportas.
-
-Projekto saugykla: [Kaspa-dev/shareNote](https://github.com/Kaspa-dev/shareNote). Šis README yra laboratorinio darbo dokumentacija. Prieš atsiskaitymą įsitikinkite, kad naujausi pakeitimai įkelti į Git nuotolinę saugyklą.
+After API changes, refresh the saved spec with `powershell -ExecutionPolicy Bypass -File scripts/export-openapi.ps1`.

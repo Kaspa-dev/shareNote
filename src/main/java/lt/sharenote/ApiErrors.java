@@ -18,7 +18,7 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY,
-                "Payload laukų reikšmės neatitinka reikalavimų.");
+                "Payload field values do not meet the validation requirements.");
         problem.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> new FieldError(e.getField(), e.getDefaultMessage())).toList());
         return handleExceptionInternal(ex, problem, headers, HttpStatus.UNPROCESSABLE_ENTITY, request);
@@ -27,7 +27,7 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail integrityError(DataIntegrityViolationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-                "Operacija pažeistų duomenų ryšius. Pirmiausia pašalinkite priklausomus resursus.");
+                "This operation would violate resource relationships. Delete dependent resources first.");
     }
 
     record FieldError(String field, String message) {}

@@ -14,7 +14,7 @@ public class ShareNoteService {
     public ShareNoteService(JdbcClient db) { this.db = db; }
 
     private ApiException missing(String resource, long id) {
-        return new ApiException(HttpStatus.NOT_FOUND, resource + " (id=" + id + ") nerasta.");
+        return new ApiException(HttpStatus.NOT_FOUND, resource + " (id=" + id + ") was not found.");
     }
 
     public List<Organization> organizations() {
@@ -22,7 +22,7 @@ public class ShareNoteService {
     }
     public Organization organization(long id) {
         return db.sql("SELECT * FROM organizations WHERE id = ?").param(id)
-                .query(Organization.class).optional().orElseThrow(() -> missing("Organizacija", id));
+                .query(Organization.class).optional().orElseThrow(() -> missing("Organization", id));
     }
     public Organization createOrganization(OrganizationInput input) {
         return db.sql("INSERT INTO organizations(name, description) VALUES (?, ?) RETURNING *")
@@ -31,11 +31,11 @@ public class ShareNoteService {
     public Organization updateOrganization(long id, OrganizationInput input) {
         return db.sql("UPDATE organizations SET name = ?, description = ? WHERE id = ? RETURNING *")
                 .param(input.name()).param(input.description()).param(id).query(Organization.class)
-                .optional().orElseThrow(() -> missing("Organizacija", id));
+                .optional().orElseThrow(() -> missing("Organization", id));
     }
     public void deleteOrganization(long id) {
         if (db.sql("DELETE FROM organizations WHERE id = ?").param(id).update() == 0)
-            throw missing("Organizacija", id);
+            throw missing("Organization", id);
     }
 
     public List<Group> groups(Long organizationId) {
@@ -47,7 +47,7 @@ public class ShareNoteService {
     }
     public Group group(long id) {
         return db.sql("SELECT * FROM groups WHERE id = ?").param(id).query(Group.class)
-                .optional().orElseThrow(() -> missing("Grupė", id));
+                .optional().orElseThrow(() -> missing("Group", id));
     }
     public Group createGroup(GroupInput input) {
         if (input.organizationId() != null) organization(input.organizationId());
@@ -60,10 +60,10 @@ public class ShareNoteService {
         if (input.organizationId() != null) organization(input.organizationId());
         return db.sql("UPDATE groups SET name = ?, description = ?, organization_id = ? WHERE id = ? RETURNING *")
                 .param(input.name()).param(input.description()).param(input.organizationId())
-                .param(id).query(Group.class).optional().orElseThrow(() -> missing("Grupė", id));
+                .param(id).query(Group.class).optional().orElseThrow(() -> missing("Group", id));
     }
     public void deleteGroup(long id) {
-        if (db.sql("DELETE FROM groups WHERE id = ?").param(id).update() == 0) throw missing("Grupė", id);
+        if (db.sql("DELETE FROM groups WHERE id = ?").param(id).update() == 0) throw missing("Group", id);
     }
 
     public List<Note> notes(Long groupId) {
@@ -73,7 +73,7 @@ public class ShareNoteService {
     }
     public Note note(long id) {
         return db.sql("SELECT * FROM notes WHERE id = ?").param(id).query(Note.class)
-                .optional().orElseThrow(() -> missing("Užrašas", id));
+                .optional().orElseThrow(() -> missing("Note", id));
     }
     public Note createNote(NoteInput input) {
         group(input.groupId());
@@ -86,9 +86,9 @@ public class ShareNoteService {
         group(input.groupId());
         return db.sql("UPDATE notes SET title = ?, content = ?, category = ?, group_id = ? WHERE id = ? RETURNING *")
                 .param(input.title()).param(input.content()).param(input.category()).param(input.groupId()).param(id)
-                .query(Note.class).optional().orElseThrow(() -> missing("Užrašas", id));
+                .query(Note.class).optional().orElseThrow(() -> missing("Note", id));
     }
     public void deleteNote(long id) {
-        if (db.sql("DELETE FROM notes WHERE id = ?").param(id).update() == 0) throw missing("Užrašas", id);
+        if (db.sql("DELETE FROM notes WHERE id = ?").param(id).update() == 0) throw missing("Note", id);
     }
 }

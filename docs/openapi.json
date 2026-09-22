@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "ShareNote API",
-    "description": "15 CRUD metodų organizacijoms, grupėms ir užrašams. Laboratorinis darbas Nr. 1.",
+    "description": "15 CRUD operations for organizations, groups, and notes. Laboratory work 1.",
     "version": "1.0.0"
   },
   "servers": [
@@ -14,9 +14,9 @@
     "/api/organizations/{id}": {
       "get": {
         "tags": [
-          "Organizacijos"
+          "Organizations"
         ],
-        "summary": "Organizacijos: gauti pagal ID",
+        "summary": "Get organization by ID",
         "operationId": "getOrganization",
         "parameters": [
           {
@@ -31,7 +31,7 @@
         ],
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -41,7 +41,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -51,7 +51,7 @@
             }
           },
           "200": {
-            "description": "Rastas resursas",
+            "description": "Resource found",
             "content": {
               "application/json": {
                 "schema": {
@@ -64,10 +64,10 @@
       },
       "put": {
         "tags": [
-          "Organizacijos"
+          "Organizations"
         ],
-        "summary": "Organizacijos: pakeisti",
-        "description": "Visi privalomi laukai turi būti pateikti. Neegzistuojantis resursas nekuriamas.",
+        "summary": "Replace organization",
+        "description": "All required fields must be provided. Missing resources are not created.",
         "operationId": "updateOrganization",
         "parameters": [
           {
@@ -92,7 +92,7 @@
         },
         "responses": {
           "200": {
-            "description": "Atnaujintas resursas",
+            "description": "Resource updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -102,7 +102,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -112,7 +112,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -122,7 +122,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -132,7 +132,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -142,7 +142,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -155,9 +155,9 @@
       },
       "delete": {
         "tags": [
-          "Organizacijos"
+          "Organizations"
         ],
-        "summary": "Organizacijos: ištrinti",
+        "summary": "Delete organization",
         "operationId": "deleteOrganization",
         "parameters": [
           {
@@ -172,10 +172,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Ištrinta, atsakymo kūnas tuščias"
+            "description": "Resource deleted; response body is empty"
           },
           "409": {
-            "description": "Pirmiausia reikia ištrinti priklausomus resursus",
+            "description": "Delete dependent resources first",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -185,7 +185,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -195,7 +195,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -210,9 +210,9 @@
     "/api/notes/{id}": {
       "get": {
         "tags": [
-          "Užrašai"
+          "Notes"
         ],
-        "summary": "Užrašai: gauti pagal ID",
+        "summary": "Get note by ID",
         "operationId": "getNote",
         "parameters": [
           {
@@ -227,7 +227,7 @@
         ],
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -237,7 +237,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -247,7 +247,7 @@
             }
           },
           "200": {
-            "description": "Rastas resursas",
+            "description": "Resource found",
             "content": {
               "application/json": {
                 "schema": {
@@ -260,10 +260,10 @@
       },
       "put": {
         "tags": [
-          "Užrašai"
+          "Notes"
         ],
-        "summary": "Užrašai: pakeisti",
-        "description": "Visi privalomi laukai turi būti pateikti. Neegzistuojantis resursas nekuriamas.",
+        "summary": "Replace note",
+        "description": "All required fields must be provided. Missing resources are not created.",
         "operationId": "updateNote",
         "parameters": [
           {
@@ -288,7 +288,7 @@
         },
         "responses": {
           "200": {
-            "description": "Atnaujintas resursas",
+            "description": "Resource updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -298,7 +298,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -308,7 +308,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -318,7 +318,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -328,7 +328,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -338,7 +338,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -351,9 +351,9 @@
       },
       "delete": {
         "tags": [
-          "Užrašai"
+          "Notes"
         ],
-        "summary": "Užrašai: ištrinti",
+        "summary": "Delete note",
         "operationId": "deleteNote",
         "parameters": [
           {
@@ -368,10 +368,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Ištrinta, atsakymo kūnas tuščias"
+            "description": "Resource deleted; response body is empty"
           },
           "409": {
-            "description": "Pirmiausia reikia ištrinti priklausomus resursus",
+            "description": "Delete dependent resources first",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -381,7 +381,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -391,7 +391,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -406,9 +406,9 @@
     "/api/groups/{id}": {
       "get": {
         "tags": [
-          "Grupės"
+          "Groups"
         ],
-        "summary": "Grupės: gauti pagal ID",
+        "summary": "Get group by ID",
         "operationId": "getGroup",
         "parameters": [
           {
@@ -423,7 +423,7 @@
         ],
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -433,7 +433,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -443,7 +443,7 @@
             }
           },
           "200": {
-            "description": "Rastas resursas",
+            "description": "Resource found",
             "content": {
               "application/json": {
                 "schema": {
@@ -456,10 +456,10 @@
       },
       "put": {
         "tags": [
-          "Grupės"
+          "Groups"
         ],
-        "summary": "Grupės: pakeisti",
-        "description": "Visi privalomi laukai turi būti pateikti. Neegzistuojantis resursas nekuriamas.",
+        "summary": "Replace group",
+        "description": "All required fields must be provided. Missing resources are not created.",
         "operationId": "updateGroup",
         "parameters": [
           {
@@ -484,7 +484,7 @@
         },
         "responses": {
           "200": {
-            "description": "Atnaujintas resursas",
+            "description": "Resource updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -494,7 +494,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -504,7 +504,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -514,7 +514,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -524,7 +524,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -534,7 +534,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -547,9 +547,9 @@
       },
       "delete": {
         "tags": [
-          "Grupės"
+          "Groups"
         ],
-        "summary": "Grupės: ištrinti",
+        "summary": "Delete group",
         "operationId": "deleteGroup",
         "parameters": [
           {
@@ -564,10 +564,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Ištrinta, atsakymo kūnas tuščias"
+            "description": "Resource deleted; response body is empty"
           },
           "409": {
-            "description": "Pirmiausia reikia ištrinti priklausomus resursus",
+            "description": "Delete dependent resources first",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -577,7 +577,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -587,7 +587,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -602,13 +602,13 @@
     "/api/organizations": {
       "get": {
         "tags": [
-          "Organizacijos"
+          "Organizations"
         ],
-        "summary": "Organizacijos: gauti sąrašą",
+        "summary": "List organizations",
         "operationId": "listOrganizations",
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -618,7 +618,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -628,7 +628,7 @@
             }
           },
           "200": {
-            "description": "Surikiuotas pagal ID sąrašas; gali būti tuščias",
+            "description": "List ordered by ID; may be empty",
             "content": {
               "application/json": {
                 "schema": {
@@ -644,9 +644,9 @@
       },
       "post": {
         "tags": [
-          "Organizacijos"
+          "Organizations"
         ],
-        "summary": "Organizacijos: sukurti",
+        "summary": "Create organization",
         "operationId": "createOrganization",
         "requestBody": {
           "content": {
@@ -660,7 +660,7 @@
         },
         "responses": {
           "201": {
-            "description": "Sukurtas resursas; Location nurodo jo adresą",
+            "description": "Resource created; Location contains its URL",
             "headers": {
               "Location": {
                 "style": "simple",
@@ -679,7 +679,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -689,7 +689,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -699,7 +699,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -709,7 +709,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -719,7 +719,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -734,9 +734,9 @@
     "/api/notes": {
       "get": {
         "tags": [
-          "Užrašai"
+          "Notes"
         ],
-        "summary": "Užrašai: gauti sąrašą",
+        "summary": "List notes",
         "operationId": "listNotes",
         "parameters": [
           {
@@ -751,7 +751,7 @@
         ],
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -761,7 +761,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -771,7 +771,7 @@
             }
           },
           "200": {
-            "description": "Surikiuotas pagal ID sąrašas; gali būti tuščias",
+            "description": "List ordered by ID; may be empty",
             "content": {
               "application/json": {
                 "schema": {
@@ -787,9 +787,9 @@
       },
       "post": {
         "tags": [
-          "Užrašai"
+          "Notes"
         ],
-        "summary": "Užrašai: sukurti",
+        "summary": "Create note",
         "operationId": "createNote",
         "requestBody": {
           "content": {
@@ -803,7 +803,7 @@
         },
         "responses": {
           "201": {
-            "description": "Sukurtas resursas; Location nurodo jo adresą",
+            "description": "Resource created; Location contains its URL",
             "headers": {
               "Location": {
                 "style": "simple",
@@ -822,7 +822,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -832,7 +832,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -842,7 +842,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -852,7 +852,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -862,7 +862,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -877,9 +877,9 @@
     "/api/groups": {
       "get": {
         "tags": [
-          "Grupės"
+          "Groups"
         ],
-        "summary": "Grupės: gauti sąrašą",
+        "summary": "List groups",
         "operationId": "listGroups",
         "parameters": [
           {
@@ -894,7 +894,7 @@
         ],
         "responses": {
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -904,7 +904,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -914,7 +914,7 @@
             }
           },
           "200": {
-            "description": "Surikiuotas pagal ID sąrašas; gali būti tuščias",
+            "description": "List ordered by ID; may be empty",
             "content": {
               "application/json": {
                 "schema": {
@@ -930,9 +930,9 @@
       },
       "post": {
         "tags": [
-          "Grupės"
+          "Groups"
         ],
-        "summary": "Grupės: sukurti",
+        "summary": "Create group",
         "operationId": "createGroup",
         "requestBody": {
           "content": {
@@ -946,7 +946,7 @@
         },
         "responses": {
           "201": {
-            "description": "Sukurtas resursas; Location nurodo jo adresą",
+            "description": "Resource created; Location contains its URL",
             "headers": {
               "Location": {
                 "style": "simple",
@@ -965,7 +965,7 @@
             }
           },
           "422": {
-            "description": "Netinkamos laukų reikšmės",
+            "description": "Invalid field values",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -975,7 +975,7 @@
             }
           },
           "409": {
-            "description": "Duomenų ryšių konfliktas",
+            "description": "Resource relationship conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -985,7 +985,7 @@
             }
           },
           "415": {
-            "description": "Reikalingas application/json",
+            "description": "Content-Type must be application/json",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -995,7 +995,7 @@
             }
           },
           "400": {
-            "description": "Netaisyklingas JSON, lauko tipas arba parametras",
+            "description": "Malformed JSON, incorrect field type, or invalid parameter",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1005,7 +1005,7 @@
             }
           },
           "404": {
-            "description": "Resursas arba susijęs resursas nerastas",
+            "description": "Resource or related resource not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1031,13 +1031,13 @@
             "maxLength": 120,
             "minLength": 1,
             "type": "string",
-            "example": "KTU Informatikos fakultetas"
+            "example": "KTU Faculty of Informatics"
           },
           "description": {
             "maxLength": 2000,
             "minLength": 0,
             "type": "string",
-            "example": "Studentų bendradarbiavimo erdvė"
+            "example": "A collaboration space for students"
           }
         }
       },
@@ -1098,13 +1098,13 @@
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
-            "example": "HTTP metodai"
+            "example": "HTTP methods"
           },
           "content": {
             "maxLength": 20000,
             "minLength": 1,
             "type": "string",
-            "example": "GET skaito, POST kuria, PUT pakeičia, DELETE šalina."
+            "example": "GET reads, POST creates, PUT replaces, DELETE removes."
           },
           "category": {
             "maxLength": 100,
@@ -1153,18 +1153,18 @@
             "maxLength": 120,
             "minLength": 1,
             "type": "string",
-            "example": "Saityno technologijos"
+            "example": "Web Technologies"
           },
           "description": {
             "maxLength": 2000,
             "minLength": 0,
             "type": "string",
-            "example": "Kurso užrašai ir laboratoriniai darbai"
+            "example": "Course notes and laboratory assignments"
           },
           "organizationId": {
             "minimum": 1,
             "type": "integer",
-            "description": "Organizacijos ID arba null savarankiškai grupei",
+            "description": "Organization ID, or null for a standalone group",
             "format": "int64",
             "nullable": true,
             "example": 1

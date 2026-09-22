@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @OpenAPIDefinition(servers = @Server(url = "/"), info = @Info(title = "ShareNote API", version = "1.0.0",
-        description = "15 CRUD metodų organizacijoms, grupėms ir užrašams. Laboratorinis darbas Nr. 1."))
+        description = "15 CRUD operations for organizations, groups, and notes. Laboratory work 1."))
 public class ShareNoteApplication {
     public static void main(String[] args) {
         SpringApplication.run(ShareNoteApplication.class, args);
