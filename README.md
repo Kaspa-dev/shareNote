@@ -28,7 +28,7 @@ node scripts/demo.mjs
 
 Checks all 15 operations, response bodies, headers, and error codes, then removes its own data. The Docker demo completed 28 HTTP checks in 1.17 seconds. Set `API_URL` to use another server.
 
-Alternatively, import the [Postman collection](docs/ShareNote.postman_collection.json) and run all requests in order with 1 iteration and 0 ms delay.
+Alternatively, import the [Postman collection](docs/ShareNote.postman_collection.json) and [local environment](docs/ShareNote.local.postman_environment.json), then run all requests with 1 iteration and 0 ms delay. [Postman instructions](docs/postman.md).
 
 ## API
 
