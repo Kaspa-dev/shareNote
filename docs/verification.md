@@ -9,6 +9,7 @@ Patikrinta 2026-09-22, Windows aplinkoje, Java 21 ir tikras PostgreSQL 17 Docker
 | Postman kolekcija per Newman | 23 užklausos, 66 teiginiai, 0 klaidų, 2,8 s |
 | OpenAPI | 15 operacijų, įvesties ir išvesties schemos, HTTP atsakymų kodai |
 | DB po demonstracijų | Išliko 2 organizacijos, 4 grupės ir 5 pradiniai užrašai |
+| Visa Docker Compose aplinka | API ir DB veikia; 28 HTTP patikros per 1,17 s |
 
 Trukmės matuotos jau paleistame serveryje; priklausomybių atsiuntimas ir programos paleidimas į jas neįtraukiami. Konkretaus kompiuterio apkrova gali pakeisti laiką.
 

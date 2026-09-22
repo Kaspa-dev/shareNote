@@ -9,13 +9,13 @@ try {
         $ready = $false
         for ($attempt = 0; $attempt -lt 90; $attempt++) {
             try {
-                $null = Invoke-RestMethod http://localhost:8080/api/organizations -TimeoutSec 2
+                $null = Invoke-RestMethod http://127.0.0.1:8080/api/organizations -TimeoutSec 2
                 $ready = $true
                 break
             } catch { Start-Sleep -Seconds 1 }
         }
         if (-not $ready) { throw 'API did not become ready. Run: docker compose logs api' }
-        $null = Invoke-RestMethod http://localhost:8080/v3/api-docs -TimeoutSec 30
+        $null = Invoke-RestMethod http://127.0.0.1:8080/v3/api-docs -TimeoutSec 30
         Write-Host 'API ready: http://localhost:8080/swagger-ui.html'
         Write-Host 'Demo: node scripts/demo.mjs'
     }
