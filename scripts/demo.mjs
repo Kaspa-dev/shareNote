@@ -35,14 +35,14 @@ async function request(method, path, status, body, raw = false) {
 
 try {
   // Each run creates its own hierarchy, preserving existing demonstration data.
-  const org = await request('POST', '/api/organizations', 201, { name: 'Demonstracijos organizacija', description: 'Automatinio atsiskaitymo duomenys' });
-  const group = await request('POST', '/api/groups', 201, { name: 'REST laboratorinis', description: 'Demonstracijos grupė', organizationId: org.id });
-  const note = await request('POST', '/api/notes', 201, { title: 'HTTP būsenos', content: '201 sukūrus; 204 ištrynus.', category: 'REST', groupId: group.id });
+  const org = await request('POST', '/api/organizations', 201, { name: 'Demo organization', description: 'Automated demonstration data' });
+  const group = await request('POST', '/api/groups', 201, { name: 'REST laboratory', description: 'Demo group', organizationId: org.id });
+  const note = await request('POST', '/api/notes', 201, { title: 'HTTP status codes', content: '201 when created; 204 when deleted.', category: 'REST', groupId: group.id });
 
   for (const [resource, item, body] of [
-    ['organizations', org, { name: 'Atnaujinta organizacija', description: 'Pakeistas aprašymas' }],
-    ['groups', group, { name: 'Atnaujinta grupė', description: 'Pakeistas aprašymas', organizationId: org.id }],
-    ['notes', note, { title: 'Atnaujintas užrašas', content: 'PUT pakeičia resursą.', category: 'HTTP', groupId: group.id }],
+    ['organizations', org, { name: 'Updated organization', description: 'Updated description' }],
+    ['groups', group, { name: 'Updated group', description: 'Updated description', organizationId: org.id }],
+    ['notes', note, { title: 'Updated note', content: 'PUT replaces a resource.', category: 'HTTP', groupId: group.id }],
   ]) {
     const list = await request('GET', `/api/${resource}`, 200);
     assert(Array.isArray(list) && list.some(x => x.id === item.id), 'Created resource missing from list');
