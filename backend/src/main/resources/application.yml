@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: ShareNote
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/sharenote}
+    username: ${DB_USER:sharenote}
+    password: ${DB_PASSWORD:sharenote-local}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+      accept-float-as-int: false
+    mapper:
+      allow-coercion-of-scalars: false
+  mvc:
+    problemdetails:
+      enabled: true
+springdoc:
+  api-docs:
+    version: OPENAPI_3_0
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  override-with-generic-response: false
+server:
+  error:
+    include-message: never

@@ -1,0 +1,13 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - ca-certificates
+swap:
+  filename: /swapfile
+  size: 2147483648
+  maxsize: 2147483648
+runcmd:
+  - systemctl enable --now docker
+  - install -d -m 0755 -o azureuser -g azureuser /opt/sharenote
