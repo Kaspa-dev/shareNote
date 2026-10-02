@@ -4,7 +4,7 @@ Patikrinta 2026-09-22, Windows aplinkoje, Java 21 ir tikras PostgreSQL 17 Docker
 
 | Patikra | Rezultatas |
 | --- | --- |
-| Integraciniai testai (`./mvnw.cmd test`) | 5 scenarijai, 0 klaidų, 0 praleistų |
+| Integraciniai testai (`cd backend`, tada `./mvnw.cmd test`) | 5 scenarijai, 0 klaidų, 0 praleistų |
 | HTTP demonstracija (`node scripts/demo.mjs`) | Visi 15 metodų, 28 HTTP patikros, 2,01 s |
 | Postman kolekcija per Newman | 23 užklausos, 72 teiginiai, 0 klaidų, 2,2 s |
 | OpenAPI | 15 operacijų, įvesties ir išvesties schemos, HTTP atsakymų kodai |

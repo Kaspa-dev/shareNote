@@ -9,7 +9,7 @@ try {
         $ready = $false
         for ($attempt = 0; $attempt -lt 90; $attempt++) {
             try {
-                $null = Invoke-RestMethod http://127.0.0.1:8080/api/organizations -TimeoutSec 2
+                $null = Invoke-RestMethod http://127.0.0.1:8080/v3/api-docs -TimeoutSec 2
                 $ready = $true
                 break
             } catch { Start-Sleep -Seconds 1 }

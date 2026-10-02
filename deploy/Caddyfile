@@ -1,0 +1,10 @@
+{$DOMAIN} {
+    encode zstd gzip
+    @docs path /swagger-ui /swagger-ui/* /swagger-ui.html /v3/api-docs /v3/api-docs/*
+    handle @docs {
+        reverse_proxy api:8080
+    }
+    handle {
+        reverse_proxy frontend:80
+    }
+}

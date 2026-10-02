@@ -1,4 +1,10 @@
 services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - api
   db:
     image: postgres:17-alpine
     environment:
@@ -15,9 +21,11 @@ services:
       timeout: 3s
       retries: 30
   api:
-    build: .
+    build: ./backend
     environment:
       DB_URL: jdbc:postgresql://db:5432/sharenote
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DB_USER: sharenote
       DB_PASSWORD: ${DB_PASSWORD:-sharenote-local}
     ports:

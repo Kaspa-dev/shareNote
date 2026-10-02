@@ -2,7 +2,7 @@
   "info": {
     "name": "ShareNote - Complete API Demo",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Covers all 15 CRUD operations and HTTP 400, 404, 409, and 422 errors. Start the API, then run the entire collection in order with 1 iteration and 0 ms delay. Choose the ShareNote - Local environment or use the collection baseUrl default. Resource IDs are captured automatically. The final folder deletes only resources created by this run. Run the complete collection, not individual folders. Interrupted runs may leave demo records behind."
+    "description": "JWT administrator login followed by all 15 CRUD operations. Set adminUsername and adminPassword in the active environment before running all folders in order."
   },
   "variable": [
     {
@@ -11,6 +11,53 @@
     }
   ],
   "item": [
+    {
+      "name": "00 - Administrator login",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "body": {
+              "raw": "{\"username\":\"{{adminUsername}}\",\"password\":\"{{adminPassword}}\"}",
+              "mode": "raw"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.unset(\"accessToken\");"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "prerequest"
+            },
+            {
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"accessToken\", pm.response.json().accessToken);",
+                  "else pm.execution.setNextRequest(null);"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "01 - Create demo resources",
       "item": [
@@ -655,5 +702,15 @@
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ],
+    "type": "bearer"
+  }
 }

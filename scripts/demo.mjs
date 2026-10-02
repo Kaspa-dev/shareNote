@@ -3,6 +3,7 @@ import { performance } from 'node:perf_hooks';
 
 const base = (process.env.API_URL || 'http://localhost:8080').replace(/\/$/, '');
 let checks = 0;
+let accessToken;
 const created = [];
 const started = performance.now();
 
@@ -13,7 +14,7 @@ function assert(condition, message) {
 async function request(method, path, status, body, raw = false) {
   const response = await fetch(base + path, {
     method,
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
     body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
     signal: AbortSignal.timeout(5000),
   });
@@ -34,6 +35,8 @@ async function request(method, path, status, body, raw = false) {
 }
 
 try {
+  assert(process.env.ADMIN_PASSWORD, 'Set ADMIN_PASSWORD to the configured administrator password.');
+  accessToken = (await request('POST', '/api/auth/login', 200, { username: process.env.ADMIN_USERNAME || 'admin', password: process.env.ADMIN_PASSWORD })).accessToken;
   // Each run creates its own hierarchy, preserving existing demonstration data.
   const org = await request('POST', '/api/organizations', 201, { name: 'Demo organization', description: 'Automated demonstration data' });
   const group = await request('POST', '/api/groups', 201, { name: 'REST laboratory', description: 'Demo group', organizationId: org.id });
@@ -81,7 +84,7 @@ try {
 } finally {
   for (const path of [...created].reverse()) {
     try {
-      const response = await fetch(base + path, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
+      const response = await fetch(base + path, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` }, signal: AbortSignal.timeout(5000) });
       if (![204, 404].includes(response.status)) console.error(`Cleanup failed: ${path}: ${response.status}`);
     } catch (error) { console.error(`Cleanup failed: ${path}: ${error.message}`); }
   }
