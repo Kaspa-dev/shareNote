@@ -53,7 +53,7 @@ export default function Header({ session, section, menu, setMenu, navigate, logo
               </span>
               <span>
                 {session.username}
-                <small>{session.role === "ADMIN" ? "Administratorius" : "Skaitytojas"}</small>
+                <small>{session.role === "ADMIN" ? "Administratorius" : session.role === "EDITOR" ? "Redaktorius" : "Skaitytojas"}</small>
               </span>
               <button
                 className="icon-button"

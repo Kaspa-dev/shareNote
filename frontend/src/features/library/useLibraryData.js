@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { request } from "../../services/api.js";
-import { sections, emptyData } from "./sections.js";
+import { request, resourceLink, libraryEntry } from "../../services/api.js";
+import { emptyData } from "./sections.js";
 
 export default function useLibraryData(session, revision, onExpired) {
   const [data, setData] = useState(emptyData);
@@ -13,16 +13,20 @@ export default function useLibraryData(session, revision, onExpired) {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    Promise.all(
-      Object.keys(sections).map((key) =>
-        request(key, { token: session.token, signal: controller.signal }),
-      ),
-    )
-      .then(([notes, groups, organizations]) =>
-        setData({ notes, groups, organizations }),
-      )
+    async function load() {
+      const options = { token: session.token, signal: controller.signal };
+      const organizations = await request(libraryEntry, options);
+      const groups = (await Promise.all(organizations.map((organization) =>
+        request(resourceLink(organization, "groups"), options),
+      ))).flat();
+      const notes = (await Promise.all(groups.map((group) =>
+        request(resourceLink(group, "notes"), options),
+      ))).flat();
+      if (!controller.signal.aborted) setData({ notes, groups, organizations });
+    }
+    load()
       .catch((e) => {
-        if (e.name === "AbortError") return;
+        if (controller.signal.aborted || e.name === "AbortError") return;
         if (e.status === 401) expired.current();
         else setError(e.message);
       })

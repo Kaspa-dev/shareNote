@@ -3,7 +3,7 @@ import { sections, singular } from "./sections.js";
 import Sidebar from "./Sidebar.jsx";
 import Collection from "./Collection.jsx";
 
-export default function Workspace({ section, data, admin, navigate, setModal, loading, error, query, setQuery, filter, setFilter, refresh, openItem }) {
+export default function Workspace({ section, data, admin, editor, canCreate, navigate, setModal, loading, error, query, setQuery, filter, setFilter, refresh, openItem }) {
   return (
     <main id="main" className="workspace">
       <div className="breadcrumb">
@@ -26,7 +26,7 @@ export default function Workspace({ section, data, admin, navigate, setModal, lo
                 : "Erdvės, kuriose susitinka jūsų komandos."}
           </p>
         </div>
-        {admin && (
+        {canCreate && (
           <button
             className="primary"
             onClick={() => setModal({ type: "edit" })}
@@ -37,8 +37,8 @@ export default function Workspace({ section, data, admin, navigate, setModal, lo
         )}
       </div>
       <div className="workspace-grid">
-        <Sidebar section={section} data={data} admin={admin} navigate={navigate} onHelp={() => setModal({ type: "help" })} />
-        <Collection section={section} data={data} admin={admin} loading={loading} error={error}
+        <Sidebar section={section} data={data} admin={admin} editor={editor} navigate={navigate} onHelp={() => setModal({ type: "help" })} />
+        <Collection section={section} data={data} admin={canCreate} loading={loading} error={error}
           query={query} setQuery={setQuery} filter={filter} setFilter={setFilter}
           refresh={refresh} openItem={openItem} />
       </div>

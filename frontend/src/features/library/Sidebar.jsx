@@ -1,7 +1,7 @@
 import { ArrowRight, BookOpen } from "lucide-react";
 import { sections, icons } from "./sections.js";
 
-export default function Sidebar({ section, data, admin, navigate, onHelp }) {
+export default function Sidebar({ section, data, admin, editor, navigate, onHelp }) {
   return (
     <aside className="sidebar">
       <span className="eyebrow">BIBLIOTEKA</span>
@@ -33,7 +33,7 @@ export default function Sidebar({ section, data, admin, navigate, onHelp }) {
       </div>
       <div className="access-note">
         <span className="status-dot" />
-        {admin ? "Galite kurti ir redaguoti" : "Peržiūros prieiga"}
+        {admin ? "Galite kurti ir redaguoti" : editor ? "Galite valdyti savo užrašus" : "Peržiūros prieiga"}
       </div>
     </aside>
   );

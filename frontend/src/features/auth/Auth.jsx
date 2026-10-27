@@ -31,6 +31,7 @@ export default function Auth({ onLogin }) {
         token: result.accessToken,
         username: body.username,
         role: payload.role,
+        userId: payload.sub,
         expiresAt: Date.now() + result.expiresIn * 1000,
         refreshToken: result.refreshToken,
         refreshExpiresAt: result.refreshExpiresAt,

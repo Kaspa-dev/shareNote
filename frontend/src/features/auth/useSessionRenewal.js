@@ -6,8 +6,13 @@ export default function useSessionRenewal(session, setSession, onExpired) {
   expired.current = onExpired;
   useEffect(() => {
     const sync = () => setSession(readSession());
+    const storage = (event) => { if (event.key === "sharenote-session" || event.key === null) sync(); };
+    window.addEventListener("storage", storage);
     window.addEventListener("session-renewed", sync);
-    return () => window.removeEventListener("session-renewed", sync);
+    return () => {
+      window.removeEventListener("storage", storage);
+      window.removeEventListener("session-renewed", sync);
+    };
   }, [setSession]);
   useEffect(() => {
     if (!session) return;
@@ -16,7 +21,7 @@ export default function useSessionRenewal(session, setSession, onExpired) {
     const renew = async () => {
       try { await renewSession(); }
       catch (e) {
-        if (cancelled) return;
+        if (cancelled || e.name === "AbortError") return;
         if (e.status === 401) expired.current();
         else timer = setTimeout(renew, 30000);
       }

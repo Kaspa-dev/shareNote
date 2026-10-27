@@ -1,0 +1,2 @@
+ALTER TABLE notes ADD COLUMN priority VARCHAR(6) NOT NULL DEFAULT 'MEDIUM'
+    CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH'));

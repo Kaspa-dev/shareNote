@@ -2,13 +2,16 @@ openapi: 3.0.1
 info:
   title: ShareNote API
   version: 1.0.0
-  description: 17 operacijų. USER ir ADMIN gali skaityti; tik ADMIN gali keisti išteklius. Visi prisijungę naudotojai
-    mato bendrą biblioteką.
+  description: 19 operacijų, įskaitant hierarchinius išteklių kelius. USER, EDITOR ir ADMIN gali skaityti; ADMIN valdo visus
+    išteklius, EDITOR kuria užrašus ir keičia bei trina tik savo pagal JWT sub ir ownerId. Visi prisijungę naudotojai mato
+    bendrą biblioteką. Pavyzdžių ID ir žetonai iliustraciniai. Sąrašams galima perduoti page ir size; praleidus abu grąžinamas
+    visas sąrašas. Klaidos pateikiamos application/problem+json; netikėti serverio sutrikimai gali sukelti 5xx. Jei Accept
+    neleidžia klaidos formato, 406 atsakymo kūnas gali skirtis.
 servers:
 - url: http://localhost:8080
   description: Vietinis API
 - url: http://localhost:3000
-  description: Vietinis Nginx tarpinis serveris
+  description: Vietinis frontend tarpinis serveris
 security:
 - bearerAuth: []
 paths:
@@ -37,6 +40,13 @@ paths:
                 id: 1
                 name: Universitetas
                 description: Bendra studijų erdvė.
+                _links:
+                  self:
+                    href: /api/organizations/1
+                  collection:
+                    href: /api/organizations
+                  groups:
+                    href: /api/organizations/1/groups
         '400':
           description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
           content:
@@ -59,6 +69,11 @@ paths:
                 title: Unauthorized
                 status: 401
                 detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
         '403':
           description: Vaidmuo neleidžia operacijos.
           content:
@@ -92,12 +107,82 @@ paths:
                 title: Not Acceptable
                 status: 406
                 detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
+      description: |-
+        Leidžiama USER, EDITOR ir ADMIN.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Universitetas",
+          "description": "Bendra studijų erdvė.",
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1"
+            },
+            "collection": {
+              "href": "/api/organizations"
+            },
+            "groups": {
+              "href": "/api/organizations/1/groups"
+            }
+          }
+        }
+        ```
     put:
       tags:
       - Organizations
       summary: Replace organization
-      description: Leidžiama tik ADMIN. PUT pakeičia visus redaguojamus laukus; nesamo ištekliaus nesukuria.
+      description: |-
+        Leidžiama tik ADMIN. PUT pakeičia visus redaguojamus laukus; nesamo ištekliaus nesukuria.
+
+        Užklausos pavyzdys:
+        ```http
+        PUT /api/organizations/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "name": "Universitetas (atnaujinta)",
+          "description": "Bendra studijų erdvė."
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Universitetas (atnaujinta)",
+          "description": "Bendra studijų erdvė.",
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1"
+            },
+            "collection": {
+              "href": "/api/organizations"
+            },
+            "groups": {
+              "href": "/api/organizations/1/groups"
+            }
+          }
+        }
+        ```
       operationId: updateOrganization
       parameters:
       - name: id
@@ -127,6 +212,13 @@ paths:
                 id: 1
                 name: Universitetas (atnaujinta)
                 description: Bendra studijų erdvė.
+                _links:
+                  self:
+                    href: /api/organizations/1
+                  collection:
+                    href: /api/organizations
+                  groups:
+                    href: /api/organizations/1/groups
         '400':
           description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
           content:
@@ -149,6 +241,11 @@ paths:
                 title: Unauthorized
                 status: 401
                 detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
         '403':
           description: Vaidmuo neleidžia operacijos.
           content:
@@ -256,6 +353,11 @@ paths:
                 title: Unauthorized
                 status: 401
                 detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
         '403':
           description: Vaidmuo neleidžia operacijos.
           content:
@@ -289,567 +391,48 @@ paths:
                 title: Conflict
                 status: 409
                 detail: This operation would violate resource relationships. Delete dependent resources first.
-      description: Leidžiama tik ADMIN.
-  /api/notes/{id}:
-    get:
-      tags:
-      - Notes
-      summary: Get note by ID
-      operationId: getNote
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '200':
-          description: Resource found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Note'
-              example:
-                id: 1
-                title: HTTP metodai
-                content: GET skaito, POST sukuria.
-                category: REST
-                groupId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Note (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
-    put:
-      tags:
-      - Notes
-      summary: Replace note
-      description: Leidžiama tik ADMIN. PUT pakeičia visus redaguojamus laukus; nesamo ištekliaus nesukuria.
-      operationId: updateNote
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NoteInput'
-            example:
-              title: HTTP metodai (atnaujinta)
-              content: GET skaito, POST sukuria.
-              category: REST
-              groupId: 1
-        required: true
-      responses:
-        '200':
-          description: Resource updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Note'
-              example:
-                id: 1
-                title: HTTP metodai (atnaujinta)
-                content: GET skaito, POST sukuria.
-                category: REST
-                groupId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Note (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-        '409':
-          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Conflict
-                status: 409
-                detail: This operation would violate resource relationships. Delete dependent resources first.
-        '415':
-          description: Content-Type turi būti application/json.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unsupported Media Type
-                status: 415
-                detail: Content-Type 'text/plain' is not supported.
-        '422':
-          description: Laukai neatitinka validacijos reikalavimų.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unprocessable Entity
-                status: 422
-                detail: Payload field values do not meet the validation requirements.
-                errors:
-                - field: title
-                  message: must not be blank
-    delete:
-      tags:
-      - Notes
-      summary: Delete note
-      operationId: deleteNote
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '204':
-          description: Resource deleted; response body is empty
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Note (id=999) was not found.
-      description: Leidžiama tik ADMIN.
-  /api/groups/{id}:
-    get:
-      tags:
-      - Groups
-      summary: Get group by ID
-      operationId: getGroup
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '200':
-          description: Resource found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-              example:
-                id: 1
-                name: Saityno technologijos
-                description: Paskaitų medžiaga.
-                organizationId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Group (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
-    put:
-      tags:
-      - Groups
-      summary: Replace group
-      description: Leidžiama tik ADMIN. PUT pakeičia visus redaguojamus laukus; nesamo ištekliaus nesukuria.
-      operationId: updateGroup
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupInput'
-            example:
-              name: Saityno technologijos (atnaujinta)
-              description: Paskaitų medžiaga.
-              organizationId: 1
-        required: true
-      responses:
-        '200':
-          description: Resource updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-              example:
-                id: 1
-                name: Saityno technologijos (atnaujinta)
-                description: Paskaitų medžiaga.
-                organizationId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Group (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-        '409':
-          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Conflict
-                status: 409
-                detail: This operation would violate resource relationships. Delete dependent resources first.
-        '415':
-          description: Content-Type turi būti application/json.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unsupported Media Type
-                status: 415
-                detail: Content-Type 'text/plain' is not supported.
-        '422':
-          description: Laukai neatitinka validacijos reikalavimų.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unprocessable Entity
-                status: 422
-                detail: Payload field values do not meet the validation requirements.
-                errors:
-                - field: name
-                  message: must not be blank
-    delete:
-      tags:
-      - Groups
-      summary: Delete group
-      operationId: deleteGroup
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '204':
-          description: Resource deleted; response body is empty
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Group (id=999) was not found.
-        '409':
-          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Conflict
-                status: 409
-                detail: This operation would violate resource relationships. Delete dependent resources first.
-      description: Leidžiama tik ADMIN.
+      description: |-
+        Leidžiama tik ADMIN.
+
+        Užklausos pavyzdys:
+        ```http
+        DELETE /api/organizations/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 204 No Content
+        ```
+        Atsakymo kūnas tuščias.
   /api/organizations:
     get:
       tags:
       - Organizations
       summary: List organizations
       operationId: listOrganizations
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: Puslapis nuo 0; numatyta 0, jei pateiktas tik size.
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+        example: 0
+      - name: size
+        in: query
+        required: false
+        description: Puslapio dydis 1–100; numatyta 10, jei pateiktas tik page.
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        example: 10
       responses:
         '200':
           description: List ordered by ID; may be empty
@@ -863,6 +446,13 @@ paths:
               - id: 1
                 name: Universitetas
                 description: Bendra studijų erdvė.
+                _links:
+                  self:
+                    href: /api/organizations/1
+                  collection:
+                    href: /api/organizations
+                  groups:
+                    href: /api/organizations/1/groups
         '400':
           description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
           content:
@@ -885,6 +475,11 @@ paths:
                 title: Unauthorized
                 status: 401
                 detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
         '403':
           description: Vaidmuo neleidžia operacijos.
           content:
@@ -907,7 +502,41 @@ paths:
                 title: Not Acceptable
                 status: 406
                 detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
+      description: |-
+        Leidžiama USER, EDITOR ir ADMIN. Neprivalomi page ir size įjungia puslapiavimą (numatyta 0 ir 10). Praleidus abu grąžinamas visas sąrašas; atsakymas lieka JSON masyvas.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations?page=0&size=10 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+          {
+            "id": 1,
+            "name": "Universitetas",
+            "description": "Bendra studijų erdvė.",
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1"
+              },
+              "collection": {
+                "href": "/api/organizations"
+              },
+              "groups": {
+                "href": "/api/organizations/1/groups"
+              }
+            }
+          }
+        ]
+        ```
     post:
       tags:
       - Organizations
@@ -940,6 +569,13 @@ paths:
                 id: 1
                 name: Universitetas
                 description: Bendra studijų erdvė.
+                _links:
+                  self:
+                    href: /api/organizations/1
+                  collection:
+                    href: /api/organizations
+                  groups:
+                    href: /api/organizations/1/groups
         '400':
           description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
           content:
@@ -962,6 +598,11 @@ paths:
                 title: Unauthorized
                 status: 401
                 detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
         '403':
           description: Vaidmuo neleidžia operacijos.
           content:
@@ -1020,430 +661,46 @@ paths:
                 errors:
                 - field: name
                   message: must not be blank
-      description: Leidžiama tik ADMIN.
-  /api/notes:
-    get:
-      tags:
-      - Notes
-      summary: List notes
-      operationId: listNotes
-      parameters:
-      - name: groupId
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '200':
-          description: List ordered by ID; may be empty
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Note'
-              example:
-              - id: 1
-                title: HTTP metodai
-                content: GET skaito, POST sukuria.
-                category: REST
-                groupId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Note (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
-    post:
-      tags:
-      - Notes
-      summary: Create note
-      operationId: createNote
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NoteInput'
-            example:
-              title: HTTP metodai
-              content: GET skaito, POST sukuria.
-              category: REST
-              groupId: 1
-        required: true
-      responses:
-        '201':
-          description: Resource created; Location contains its URL
-          headers:
-            Location:
-              description: Sukurto ištekliaus santykinis URL.
-              schema:
-                type: string
-                format: uri-reference
-              example: /api/notes/1
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Note'
-              example:
-                id: 1
-                title: HTTP metodai
-                content: GET skaito, POST sukuria.
-                category: REST
-                groupId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Note (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-        '409':
-          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Conflict
-                status: 409
-                detail: This operation would violate resource relationships. Delete dependent resources first.
-        '415':
-          description: Content-Type turi būti application/json.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unsupported Media Type
-                status: 415
-                detail: Content-Type 'text/plain' is not supported.
-        '422':
-          description: Laukai neatitinka validacijos reikalavimų.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unprocessable Entity
-                status: 422
-                detail: Payload field values do not meet the validation requirements.
-                errors:
-                - field: title
-                  message: must not be blank
-      description: Leidžiama tik ADMIN.
-  /api/groups:
-    get:
-      tags:
-      - Groups
-      summary: List groups
-      operationId: listGroups
-      parameters:
-      - name: organizationId
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int64
-        example: 1
-      responses:
-        '200':
-          description: List ordered by ID; may be empty
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Group'
-              example:
-              - id: 1
-                name: Saityno technologijos
-                description: Paskaitų medžiaga.
-                organizationId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Group (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-      description: Leidžiama USER ir ADMIN.
-    post:
-      tags:
-      - Groups
-      summary: Create group
-      operationId: createGroup
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupInput'
-            example:
-              name: Saityno technologijos
-              description: Paskaitų medžiaga.
-              organizationId: 1
-        required: true
-      responses:
-        '201':
-          description: Resource created; Location contains its URL
-          headers:
-            Location:
-              description: Sukurto ištekliaus santykinis URL.
-              schema:
-                type: string
-                format: uri-reference
-              example: /api/groups/1
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-              example:
-                id: 1
-                name: Saityno technologijos
-                description: Paskaitų medžiaga.
-                organizationId: 1
-        '400':
-          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Bad Request
-                status: 400
-                detail: Failed to read request
-        '401':
-          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unauthorized
-                status: 401
-                detail: A valid Bearer token is required.
-        '403':
-          description: Vaidmuo neleidžia operacijos.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Forbidden
-                status: 403
-                detail: Your role does not allow this operation.
-        '404':
-          description: Išteklius arba susijęs išteklius nerastas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Found
-                status: 404
-                detail: Group (id=999) was not found.
-        '406':
-          description: Accept prašo nepalaikomo formato.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Not Acceptable
-                status: 406
-                detail: No acceptable representation
-        '409':
-          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Conflict
-                status: 409
-                detail: This operation would violate resource relationships. Delete dependent resources first.
-        '415':
-          description: Content-Type turi būti application/json.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unsupported Media Type
-                status: 415
-                detail: Content-Type 'text/plain' is not supported.
-        '422':
-          description: Laukai neatitinka validacijos reikalavimų.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-              example:
-                type: about:blank
-                title: Unprocessable Entity
-                status: 422
-                detail: Payload field values do not meet the validation requirements.
-                errors:
-                - field: name
-                  message: must not be blank
-      description: Leidžiama tik ADMIN.
+      description: |-
+        Leidžiama tik ADMIN.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/organizations HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "name": "Universitetas",
+          "description": "Bendra studijų erdvė."
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 201 Created
+        Location: /api/organizations/1
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Universitetas",
+          "description": "Bendra studijų erdvė.",
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1"
+            },
+            "collection": {
+              "href": "/api/organizations"
+            },
+            "groups": {
+              "href": "/api/organizations/1/groups"
+            }
+          }
+        }
+        ```
   /api/auth/register:
     post:
       tags:
@@ -1469,7 +726,9 @@ paths:
               example:
                 accessToken: <gautas-JWT>
                 tokenType: Bearer
-                expiresIn: 3600
+                expiresIn: 180
+                refreshToken: <gautas-refresh-JWT>
+                refreshExpiresAt: 1793275200000
           headers:
             Cache-Control:
               schema:
@@ -1545,10 +804,40 @@ paths:
                 - field: password
                   message: must not be blank
       security: []
-      description: Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401.
+      description: |-
+        Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/auth/register HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Content-Type: application/json
+
+        {
+          "username": "studentas",
+          "password": "Pavyzdinis-123!"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 201 Created
+        Cache-Control: no-store
+        Content-Type: application/json
+
+        {
+          "accessToken": "<gautas-JWT>",
+          "tokenType": "Bearer",
+          "expiresIn": 180,
+          "refreshToken": "<gautas-refresh-JWT>",
+          "refreshExpiresAt": 1793275200000
+        }
+        ```
   /api/auth/refresh:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Rotate a refresh token and issue a new access token
       security: []
       requestBody:
@@ -1557,6 +846,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: <gautas-refresh-JWT>
       responses:
         '200':
           description: New token pair; the previous refresh token is consumed
@@ -1564,13 +855,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponse'
+              example:
+                accessToken: <gautas-JWT>
+                tokenType: Bearer
+                expiresIn: 180
+                refreshToken: <gautas-refresh-JWT>
+                refreshExpiresAt: 1793275200000
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
         '401':
-          description: Invalid, consumed or expired refresh token
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Invalid or expired refresh token.
         '422':
-          description: Invalid request fields
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: refreshToken
+                  message: must not be blank
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+      operationId: refresh
+      description: |-
+        Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401. Atnaujinimo žetonas panaudojamas vieną kartą ir pakeičiamas nauju; pradinis sesijos galiojimo terminas nepratęsiamas.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/auth/refresh HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Content-Type: application/json
+
+        {
+          "refreshToken": "<gautas-refresh-JWT>"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Cache-Control: no-store
+        Content-Type: application/json
+
+        {
+          "accessToken": "<gautas-JWT>",
+          "tokenType": "Bearer",
+          "expiresIn": 180,
+          "refreshToken": "<gautas-refresh-JWT>",
+          "refreshExpiresAt": 1793275200000
+        }
+        ```
   /api/auth/logout:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Revoke a refresh token
       security: []
       requestBody:
@@ -1579,11 +966,85 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: <gautas-refresh-JWT>
       responses:
         '204':
           description: Refresh token revoked or already invalid
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
         '422':
-          description: Invalid request fields
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: refreshToken
+                  message: must not be blank
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Invalid username or password.
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+      operationId: logout
+      description: |-
+        Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401. Atšaukia atnaujinimo žetoną; jau išduotas prieigos JWT galioja iki galiojimo pabaigos. Nebegaliojantis atnaujinimo žetonas taip pat grąžina 204.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/auth/logout HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Content-Type: application/json
+
+        {
+          "refreshToken": "<gautas-refresh-JWT>"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 204 No Content
+        Cache-Control: no-store
+        ```
+        Atsakymo kūnas tuščias.
   /api/auth/login:
     post:
       tags:
@@ -1609,7 +1070,9 @@ paths:
               example:
                 accessToken: <gautas-JWT>
                 tokenType: Bearer
-                expiresIn: 3600
+                expiresIn: 180
+                refreshToken: <gautas-refresh-JWT>
+                refreshExpiresAt: 1793275200000
           headers:
             Cache-Control:
               schema:
@@ -1674,7 +1137,1772 @@ paths:
                 - field: password
                   message: must not be blank
       security: []
-      description: Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401.
+      description: |-
+        Vieša operacija. Pateikus netinkamą Bearer žetoną, saugos filtras gali grąžinti 401.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/auth/login HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Content-Type: application/json
+
+        {
+          "username": "studentas",
+          "password": "Pavyzdinis-123!"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Cache-Control: no-store
+        Content-Type: application/json
+
+        {
+          "accessToken": "<gautas-JWT>",
+          "tokenType": "Bearer",
+          "expiresIn": 180,
+          "refreshToken": "<gautas-refresh-JWT>",
+          "refreshExpiresAt": 1793275200000
+        }
+        ```
+  /api/organizations/{organizationId}/groups:
+    get:
+      tags:
+      - Groups
+      summary: List groups
+      operationId: listOrganizationGroups
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: Puslapis nuo 0; numatyta 0, jei pateiktas tik size.
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+        example: 0
+      - name: size
+        in: query
+        required: false
+        description: Puslapio dydis 1–100; numatyta 10, jei pateiktas tik page.
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        example: 10
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '200':
+          description: List ordered by ID; may be empty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+              example:
+              - id: 1
+                name: Saityno technologijos
+                description: Kurso užrašai.
+                organizationId: 1
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1
+                  collection:
+                    href: /api/organizations/1/groups
+                  organization:
+                    href: /api/organizations/1
+                  notes:
+                    href: /api/organizations/1/groups/1/notes
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Group (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. USER, EDITOR and ADMIN can read. Neprivalomi page ir size įjungia puslapiavimą (numatyta 0 ir 10). Praleidus abu grąžinamas visas sąrašas; atsakymas lieka JSON masyvas.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations/1/groups?page=0&size=10 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+          {
+            "id": 1,
+            "name": "Saityno technologijos",
+            "description": "Kurso užrašai.",
+            "organizationId": 1,
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1/groups/1"
+              },
+              "collection": {
+                "href": "/api/organizations/1/groups"
+              },
+              "organization": {
+                "href": "/api/organizations/1"
+              },
+              "notes": {
+                "href": "/api/organizations/1/groups/1/notes"
+              }
+            }
+          }
+        ]
+        ```
+    post:
+      tags:
+      - Groups
+      summary: Create group
+      operationId: createOrganizationGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NestedGroupInput'
+            example:
+              name: Saityno technologijos
+              description: Paskaitų medžiaga.
+        required: true
+      responses:
+        '201':
+          description: Resource created; Location contains its URL
+          headers:
+            Location:
+              description: Sukurto ištekliaus santykinis URL.
+              schema:
+                type: string
+                format: uri-reference
+              example: /api/organizations/1/groups/1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+              example:
+                id: 1
+                name: Saityno technologijos
+                description: Paskaitų medžiaga.
+                organizationId: 1
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1
+                  collection:
+                    href: /api/organizations/1/groups
+                  organization:
+                    href: /api/organizations/1
+                  notes:
+                    href: /api/organizations/1/groups/1/notes
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Group (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+        '409':
+          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: This operation would violate resource relationships. Delete dependent resources first.
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+        '422':
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: name
+                  message: must not be blank
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. The body omits organizationId. Only ADMIN can write.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/organizations/1/groups HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "name": "Saityno technologijos",
+          "description": "Paskaitų medžiaga."
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 201 Created
+        Location: /api/organizations/1/groups/1
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Saityno technologijos",
+          "description": "Paskaitų medžiaga.",
+          "organizationId": 1,
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            },
+            "notes": {
+              "href": "/api/organizations/1/groups/1/notes"
+            }
+          }
+        }
+        ```
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+  /api/organizations/{organizationId}/groups/{groupId}:
+    get:
+      tags:
+      - Groups
+      summary: Get group by ID
+      operationId: getOrganizationGroup
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '200':
+          description: Resource found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+              example:
+                id: 1
+                name: Saityno technologijos
+                description: Kurso užrašai.
+                organizationId: 1
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1
+                  collection:
+                    href: /api/organizations/1/groups
+                  organization:
+                    href: /api/organizations/1
+                  notes:
+                    href: /api/organizations/1/groups/1/notes
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Group (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. USER, EDITOR and ADMIN can read.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations/1/groups/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Saityno technologijos",
+          "description": "Kurso užrašai.",
+          "organizationId": 1,
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            },
+            "notes": {
+              "href": "/api/organizations/1/groups/1/notes"
+            }
+          }
+        }
+        ```
+    put:
+      tags:
+      - Groups
+      summary: Replace group
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. The body omits organizationId. Only ADMIN can write.
+
+        Užklausos pavyzdys:
+        ```http
+        PUT /api/organizations/1/groups/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "name": "Saityno technologijos (atnaujinta)",
+          "description": "Paskaitų medžiaga."
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "name": "Saityno technologijos (atnaujinta)",
+          "description": "Paskaitų medžiaga.",
+          "organizationId": 1,
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            },
+            "notes": {
+              "href": "/api/organizations/1/groups/1/notes"
+            }
+          }
+        }
+        ```
+      operationId: updateOrganizationGroup
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NestedGroupInput'
+            example:
+              name: Saityno technologijos (atnaujinta)
+              description: Paskaitų medžiaga.
+        required: true
+      responses:
+        '200':
+          description: Resource updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+              example:
+                id: 1
+                name: Saityno technologijos (atnaujinta)
+                description: Paskaitų medžiaga.
+                organizationId: 1
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1
+                  collection:
+                    href: /api/organizations/1/groups
+                  organization:
+                    href: /api/organizations/1
+                  notes:
+                    href: /api/organizations/1/groups/1/notes
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Group (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+        '409':
+          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: This operation would violate resource relationships. Delete dependent resources first.
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+        '422':
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: name
+                  message: must not be blank
+    delete:
+      tags:
+      - Groups
+      summary: Delete group
+      operationId: deleteOrganizationGroup
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '204':
+          description: Resource deleted; response body is empty
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Group (id=999) was not found.
+        '409':
+          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: This operation would violate resource relationships. Delete dependent resources first.
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. Only ADMIN can write.
+
+        Užklausos pavyzdys:
+        ```http
+        DELETE /api/organizations/1/groups/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 204 No Content
+        ```
+        Atsakymo kūnas tuščias.
+  /api/organizations/{organizationId}/groups/{groupId}/notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listGroupNotes
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: Puslapis nuo 0; numatyta 0, jei pateiktas tik size.
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+        example: 0
+      - name: size
+        in: query
+        required: false
+        description: Puslapio dydis 1–100; numatyta 10, jei pateiktas tik page.
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        example: 10
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '200':
+          description: List ordered by ID; may be empty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+              example:
+              - id: 1
+                title: HTTP metodai
+                content: GET skaito, POST kuria, PUT pakeičia, DELETE šalina.
+                category: REST
+                groupId: 1
+                ownerId: 2
+                priority: MEDIUM
+                group:
+                  id: 1
+                  name: Saityno technologijos
+                  description: Kurso užrašai.
+                  organizationId: 1
+                  _links:
+                    self:
+                      href: /api/organizations/1/groups/1
+                    collection:
+                      href: /api/organizations/1/groups
+                    organization:
+                      href: /api/organizations/1
+                    notes:
+                      href: /api/organizations/1/groups/1/notes
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1/notes/1
+                  collection:
+                    href: /api/organizations/1/groups/1/notes
+                  group:
+                    href: /api/organizations/1/groups/1
+                  organization:
+                    href: /api/organizations/1
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Note (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. USER, EDITOR and ADMIN can read. Neprivalomi page ir size įjungia puslapiavimą (numatyta 0 ir 10). Praleidus abu grąžinamas visas sąrašas; atsakymas lieka JSON masyvas.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations/1/groups/1/notes?page=0&size=10 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+          {
+            "id": 1,
+            "title": "HTTP metodai",
+            "content": "GET skaito, POST kuria, PUT pakeičia, DELETE šalina.",
+            "category": "REST",
+            "groupId": 1,
+            "ownerId": 2,
+            "priority": "MEDIUM",
+            "group": {
+              "id": 1,
+              "name": "Saityno technologijos",
+              "description": "Kurso užrašai.",
+              "organizationId": 1,
+              "_links": {
+                "self": {
+                  "href": "/api/organizations/1/groups/1"
+                },
+                "collection": {
+                  "href": "/api/organizations/1/groups"
+                },
+                "organization": {
+                  "href": "/api/organizations/1"
+                },
+                "notes": {
+                  "href": "/api/organizations/1/groups/1/notes"
+                }
+              }
+            },
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1/groups/1/notes/1"
+              },
+              "collection": {
+                "href": "/api/organizations/1/groups/1/notes"
+              },
+              "group": {
+                "href": "/api/organizations/1/groups/1"
+              },
+              "organization": {
+                "href": "/api/organizations/1"
+              }
+            }
+          }
+        ]
+        ```
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createGroupNote
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NestedNoteInput'
+            example:
+              title: HTTP metodai
+              content: GET skaito, POST sukuria.
+              category: REST
+              priority: MEDIUM
+        required: true
+      responses:
+        '201':
+          description: Resource created; Location contains its URL
+          headers:
+            Location:
+              description: Sukurto ištekliaus santykinis URL.
+              schema:
+                type: string
+                format: uri-reference
+              example: /api/organizations/1/groups/1/notes/1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+              example:
+                id: 1
+                title: HTTP metodai
+                content: GET skaito, POST sukuria.
+                category: REST
+                groupId: 1
+                ownerId: 2
+                priority: MEDIUM
+                group:
+                  id: 1
+                  name: Saityno technologijos
+                  description: Kurso užrašai.
+                  organizationId: 1
+                  _links:
+                    self:
+                      href: /api/organizations/1/groups/1
+                    collection:
+                      href: /api/organizations/1/groups
+                    organization:
+                      href: /api/organizations/1
+                    notes:
+                      href: /api/organizations/1/groups/1/notes
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1/notes/1
+                  collection:
+                    href: /api/organizations/1/groups/1/notes
+                  group:
+                    href: /api/organizations/1/groups/1
+                  organization:
+                    href: /api/organizations/1
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Note (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+        '409':
+          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: This operation would violate resource relationships. Delete dependent resources first.
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+        '422':
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: title
+                  message: must not be blank
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. The body omits groupId. ADMIN can write all notes; EDITOR can create and write only their own notes. The server assigns ownerId from JWT sub.
+
+        Užklausos pavyzdys:
+        ```http
+        POST /api/organizations/1/groups/1/notes HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "title": "HTTP metodai",
+          "content": "GET skaito, POST sukuria.",
+          "category": "REST",
+          "priority": "MEDIUM"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 201 Created
+        Location: /api/organizations/1/groups/1/notes/1
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "title": "HTTP metodai",
+          "content": "GET skaito, POST sukuria.",
+          "category": "REST",
+          "groupId": 1,
+          "ownerId": 2,
+          "priority": "MEDIUM",
+          "group": {
+            "id": 1,
+            "name": "Saityno technologijos",
+            "description": "Kurso užrašai.",
+            "organizationId": 1,
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1/groups/1"
+              },
+              "collection": {
+                "href": "/api/organizations/1/groups"
+              },
+              "organization": {
+                "href": "/api/organizations/1"
+              },
+              "notes": {
+                "href": "/api/organizations/1/groups/1/notes"
+              }
+            }
+          },
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1/notes/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups/1/notes"
+            },
+            "group": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            }
+          }
+        }
+        ```
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+  /api/organizations/{organizationId}/groups/{groupId}/notes/{id}:
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getGroupNote
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '200':
+          description: Resource found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+              example:
+                id: 1
+                title: HTTP metodai
+                content: GET skaito, POST kuria, PUT pakeičia, DELETE šalina.
+                category: REST
+                groupId: 1
+                ownerId: 2
+                priority: MEDIUM
+                group:
+                  id: 1
+                  name: Saityno technologijos
+                  description: Kurso užrašai.
+                  organizationId: 1
+                  _links:
+                    self:
+                      href: /api/organizations/1/groups/1
+                    collection:
+                      href: /api/organizations/1/groups
+                    organization:
+                      href: /api/organizations/1
+                    notes:
+                      href: /api/organizations/1/groups/1/notes
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1/notes/1
+                  collection:
+                    href: /api/organizations/1/groups/1/notes
+                  group:
+                    href: /api/organizations/1/groups/1
+                  organization:
+                    href: /api/organizations/1
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Note (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. USER, EDITOR and ADMIN can read.
+
+        Užklausos pavyzdys:
+        ```http
+        GET /api/organizations/1/groups/1/notes/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "title": "HTTP metodai",
+          "content": "GET skaito, POST kuria, PUT pakeičia, DELETE šalina.",
+          "category": "REST",
+          "groupId": 1,
+          "ownerId": 2,
+          "priority": "MEDIUM",
+          "group": {
+            "id": 1,
+            "name": "Saityno technologijos",
+            "description": "Kurso užrašai.",
+            "organizationId": 1,
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1/groups/1"
+              },
+              "collection": {
+                "href": "/api/organizations/1/groups"
+              },
+              "organization": {
+                "href": "/api/organizations/1"
+              },
+              "notes": {
+                "href": "/api/organizations/1/groups/1/notes"
+              }
+            }
+          },
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1/notes/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups/1/notes"
+            },
+            "group": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            }
+          }
+        }
+        ```
+    put:
+      tags:
+      - Notes
+      summary: Replace note
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. The body omits groupId. ADMIN can write all notes; EDITOR can create and write only their own notes. The server assigns ownerId from JWT sub.
+
+        Užklausos pavyzdys:
+        ```http
+        PUT /api/organizations/1/groups/1/notes/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        Content-Type: application/json
+
+        {
+          "title": "HTTP metodai (atnaujinta)",
+          "content": "GET skaito, POST sukuria.",
+          "category": "REST",
+          "priority": "MEDIUM"
+        }
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "id": 1,
+          "title": "HTTP metodai (atnaujinta)",
+          "content": "GET skaito, POST sukuria.",
+          "category": "REST",
+          "groupId": 1,
+          "ownerId": 2,
+          "priority": "MEDIUM",
+          "group": {
+            "id": 1,
+            "name": "Saityno technologijos",
+            "description": "Kurso užrašai.",
+            "organizationId": 1,
+            "_links": {
+              "self": {
+                "href": "/api/organizations/1/groups/1"
+              },
+              "collection": {
+                "href": "/api/organizations/1/groups"
+              },
+              "organization": {
+                "href": "/api/organizations/1"
+              },
+              "notes": {
+                "href": "/api/organizations/1/groups/1/notes"
+              }
+            }
+          },
+          "_links": {
+            "self": {
+              "href": "/api/organizations/1/groups/1/notes/1"
+            },
+            "collection": {
+              "href": "/api/organizations/1/groups/1/notes"
+            },
+            "group": {
+              "href": "/api/organizations/1/groups/1"
+            },
+            "organization": {
+              "href": "/api/organizations/1"
+            }
+          }
+        }
+        ```
+      operationId: updateGroupNote
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NestedNoteInput'
+            example:
+              title: HTTP metodai (atnaujinta)
+              content: GET skaito, POST sukuria.
+              category: REST
+              priority: MEDIUM
+        required: true
+      responses:
+        '200':
+          description: Resource updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+              example:
+                id: 1
+                title: HTTP metodai (atnaujinta)
+                content: GET skaito, POST sukuria.
+                category: REST
+                groupId: 1
+                ownerId: 2
+                priority: MEDIUM
+                group:
+                  id: 1
+                  name: Saityno technologijos
+                  description: Kurso užrašai.
+                  organizationId: 1
+                  _links:
+                    self:
+                      href: /api/organizations/1/groups/1
+                    collection:
+                      href: /api/organizations/1/groups
+                    organization:
+                      href: /api/organizations/1
+                    notes:
+                      href: /api/organizations/1/groups/1/notes
+                _links:
+                  self:
+                    href: /api/organizations/1/groups/1/notes/1
+                  collection:
+                    href: /api/organizations/1/groups/1/notes
+                  group:
+                    href: /api/organizations/1/groups/1
+                  organization:
+                    href: /api/organizations/1
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Note (id=999) was not found.
+        '406':
+          description: Accept prašo nepalaikomo formato.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Acceptable
+                status: 406
+                detail: No acceptable representation
+        '409':
+          description: Užimtas naudotojo vardas arba DB ryšių konfliktas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: This operation would violate resource relationships. Delete dependent resources first.
+        '415':
+          description: Content-Type turi būti application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unsupported Media Type
+                status: 415
+                detail: Content-Type 'text/plain' is not supported.
+        '422':
+          description: Laukai neatitinka validacijos reikalavimų.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unprocessable Entity
+                status: 422
+                detail: Payload field values do not meet the validation requirements.
+                errors:
+                - field: title
+                  message: must not be blank
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteGroupNote
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      responses:
+        '204':
+          description: Resource deleted; response body is empty
+        '400':
+          description: Netaisyklingas JSON, nežinomas laukas arba netinkamas tipas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: Failed to read request
+        '401':
+          description: Trūksta galiojančio JWT arba neteisingi prisijungimo duomenys.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid Bearer token is required.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+        '403':
+          description: Vaidmuo neleidžia operacijos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Forbidden
+                status: 403
+                detail: Your role does not allow this operation.
+        '404':
+          description: Išteklius arba susijęs išteklius nerastas.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Note (id=999) was not found.
+      description: |-
+        Scoped to the parent in the URL. Missing parents or children belonging to another parent return 404. ADMIN can write all notes; EDITOR can create and write only their own notes. The server assigns ownerId from JWT sub.
+
+        Užklausos pavyzdys:
+        ```http
+        DELETE /api/organizations/1/groups/1/notes/1 HTTP/1.1
+        Host: localhost:8080
+        Accept: application/json, application/problem+json
+        Authorization: Bearer <JWT>
+        ```
+
+        Atsakymo pavyzdys:
+        ```http
+        HTTP/1.1 204 No Content
+        ```
+        Atsakymo kūnas tuščias.
 components:
   schemas:
     OrganizationInput:
@@ -1721,9 +2949,24 @@ components:
                 type: string
               message:
                 type: string
+    ResourceLink:
+      type: object
+      required:
+      - href
+      properties:
+        href:
+          type: string
+          format: uri-reference
+          example: /api/organizations/1
     Organization:
       type: object
       properties:
+        _links:
+          type: object
+          readOnly: true
+          description: Navigation relations with same-origin API hrefs; see docs/hypermedia.md.
+          additionalProperties:
+            $ref: '#/components/schemas/ResourceLink'
         id:
           type: integer
           format: int64
@@ -1731,41 +2974,23 @@ components:
           type: string
         description:
           type: string
-    NoteInput:
       required:
-      - category
-      - content
-      - groupId
-      - title
-      type: object
-      properties:
-        title:
-          maxLength: 200
-          minLength: 1
-          type: string
-          example: HTTP methods
-          description: Negali būti tuščia arba vien tarpai.
-        content:
-          maxLength: 20000
-          minLength: 1
-          type: string
-          example: GET reads, POST creates, PUT replaces, DELETE removes.
-          description: Negali būti tuščia arba vien tarpai.
-        category:
-          maxLength: 100
-          minLength: 1
-          type: string
-          example: REST
-          description: Negali būti tuščia arba vien tarpai.
-        groupId:
-          minimum: 1
-          type: integer
-          format: int64
-          example: 1
-      additionalProperties: false
+      - _links
+      - id
+      - name
+      - description
     Note:
       type: object
+      description: A composite resource built from the note and its parent group for note details.
       properties:
+        group:
+          $ref: '#/components/schemas/Group'
+        _links:
+          type: object
+          readOnly: true
+          description: Navigation relations with same-origin API hrefs; see docs/hypermedia.md.
+          additionalProperties:
+            $ref: '#/components/schemas/ResourceLink'
         id:
           type: integer
           format: int64
@@ -1775,37 +3000,40 @@ components:
           type: string
         category:
           type: string
+        ownerId:
+          type: integer
+          format: int64
+          readOnly: true
+          nullable: true
+          description: Author user ID from JWT sub; null for historical shared notes.
+        priority:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
         groupId:
           type: integer
           format: int64
-    GroupInput:
       required:
-      - description
-      - name
-      type: object
-      properties:
-        name:
-          maxLength: 120
-          minLength: 1
-          type: string
-          example: Web Technologies
-          description: Negali būti tuščia arba vien tarpai.
-        description:
-          maxLength: 2000
-          minLength: 0
-          type: string
-          example: Course notes and laboratory assignments
-        organizationId:
-          minimum: 1
-          type: integer
-          description: Organization ID, or null for a standalone group
-          format: int64
-          nullable: true
-          example: 1
-      additionalProperties: false
+      - group
+      - _links
+      - id
+      - title
+      - content
+      - category
+      - ownerId
+      - priority
+      - groupId
     Group:
       type: object
       properties:
+        _links:
+          type: object
+          readOnly: true
+          description: Navigation relations with same-origin API hrefs; see docs/hypermedia.md.
+          additionalProperties:
+            $ref: '#/components/schemas/ResourceLink'
         id:
           type: integer
           format: int64
@@ -1816,7 +3044,13 @@ components:
         organizationId:
           type: integer
           format: int64
-          nullable: true
+          description: Required organization ID
+      required:
+      - _links
+      - id
+      - name
+      - description
+      - organizationId
     Credentials:
       required:
       - password
@@ -1839,13 +3073,14 @@ components:
       additionalProperties: false
     RefreshRequest:
       type: object
-      required: [refreshToken]
+      required:
+      - refreshToken
       additionalProperties: false
       properties:
         refreshToken:
           type: string
           minLength: 1
-          maxLength: 128
+          maxLength: 4096
     TokenResponse:
       type: object
       properties:
@@ -1862,6 +3097,69 @@ components:
         expiresIn:
           type: integer
           format: int64
+          description: Prieigos JWT galiojimas sekundėmis (180).
+      required:
+      - accessToken
+      - tokenType
+      - refreshToken
+      - refreshExpiresAt
+      - expiresIn
+    NestedGroupInput:
+      required:
+      - description
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 120
+          minLength: 1
+          type: string
+          example: Web Technologies
+          description: Negali būti tuščia arba vien tarpai.
+        description:
+          maxLength: 2000
+          minLength: 0
+          type: string
+          example: Course notes and laboratory assignments
+      additionalProperties: false
+      description: The parent is supplied by the URL; do not include organizationId in the body.
+    NestedNoteInput:
+      required:
+      - category
+      - content
+      - title
+      type: object
+      properties:
+        priority:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - null
+          default: MEDIUM
+          description: Praleidus arba pateikus null naudojama MEDIUM.
+          nullable: true
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+          example: HTTP methods
+          description: Negali būti tuščia arba vien tarpai.
+        content:
+          maxLength: 20000
+          minLength: 1
+          type: string
+          example: GET reads, POST creates, PUT replaces, DELETE removes.
+          description: Negali būti tuščia arba vien tarpai.
+        category:
+          maxLength: 100
+          minLength: 1
+          type: string
+          example: REST
+          description: Negali būti tuščia arba vien tarpai.
+      additionalProperties: false
+      description: The parent is supplied by the URL; do not include groupId in the body.
   securitySchemes:
     bearerAuth:
       type: http
