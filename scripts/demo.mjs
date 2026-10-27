@@ -39,13 +39,15 @@ try {
   accessToken = (await request('POST', '/api/auth/login', 200, { username: process.env.ADMIN_USERNAME || 'admin', password: process.env.ADMIN_PASSWORD })).accessToken;
   // Each run creates its own hierarchy, preserving existing demonstration data.
   const org = await request('POST', '/api/organizations', 201, { name: 'Demo organization', description: 'Automated demonstration data' });
-  const group = await request('POST', '/api/groups', 201, { name: 'REST laboratory', description: 'Demo group', organizationId: org.id });
-  const note = await request('POST', '/api/notes', 201, { title: 'HTTP status codes', content: '201 when created; 204 when deleted.', category: 'REST', groupId: group.id });
+  const groupPath = `/api/organizations/${org.id}/groups`;
+  const group = await request('POST', groupPath, 201, { name: 'REST laboratory', description: 'Demo group' });
+  const notePath = `${groupPath}/${group.id}/notes`;
+  const note = await request('POST', notePath, 201, { title: 'HTTP status codes', content: '201 when created; 204 when deleted.', category: 'REST' });
 
   for (const [resource, item, body] of [
     ['organizations', org, { name: 'Updated organization', description: 'Updated description' }],
-    ['groups', group, { name: 'Updated group', description: 'Updated description', organizationId: org.id }],
-    ['notes', note, { title: 'Updated note', content: 'PUT replaces a resource.', category: 'HTTP', groupId: group.id }],
+    [groupPath.slice(5), group, { name: 'Updated group', description: 'Updated description' }],
+    [notePath.slice(5), note, { title: 'Updated note', content: 'PUT replaces a resource.', category: 'HTTP' }],
   ]) {
     const list = await request('GET', `/api/${resource}`, 200);
     assert(Array.isArray(list) && list.some(x => x.id === item.id), 'Created resource missing from list');
@@ -58,15 +60,15 @@ try {
     }
   }
 
-  const groups = await request('GET', `/api/groups?organizationId=${org.id}`, 200);
+  const groups = await request('GET', groupPath, 200);
   assert(groups.length === 1 && groups[0].id === group.id, 'Organization filter failed');
-  const notes = await request('GET', `/api/notes?groupId=${group.id}`, 200);
+  const notes = await request('GET', notePath, 200);
   assert(notes.length === 1 && notes[0].id === note.id, 'Group filter failed');
-  await request('GET', '/api/notes/9223372036854775807', 404);
-  await request('POST', '/api/notes', 400, '{broken json', true);
-  await request('POST', '/api/notes', 422, { title: '', content: '', category: '', groupId: group.id });
+  await request('GET', `${notePath}/9223372036854775807`, 404);
+  await request('POST', notePath, 400, '{broken json', true);
+  await request('POST', notePath, 422, { title: '', content: '', category: '' });
   await request('DELETE', `/api/organizations/${org.id}`, 409);
-  await request('DELETE', `/api/groups/${group.id}`, 409);
+  await request('DELETE', `${groupPath}/${group.id}`, 409);
   for (const path of [...created].reverse()) {
     await request('DELETE', path, 204);
     created.splice(created.indexOf(path), 1);

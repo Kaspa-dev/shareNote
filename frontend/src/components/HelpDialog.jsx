@@ -6,7 +6,7 @@ export default function HelpDialog({ onClose }) {
     <Modal title="Jūsų ShareNote erdvė" onClose={onClose}>
       <div className="help-content">
         <p>
-          Organizacijos jungia grupes. Grupės gali veikti ir savarankiškai.
+          Organizacijos jungia grupes. Kiekviena grupė priklauso organizacijai.
           Kiekvienas užrašas priklauso vienai grupei.
         </p>
         <h3>Kaip pradėti?</h3>
@@ -18,6 +18,7 @@ export default function HelpDialog({ onClose }) {
         <h3>Prieigos teisės</h3>
         <p>
           Užsiregistravę naudotojai gali peržiūrėti visą biblioteką.
+          Redaktoriai gali kurti užrašus, redaguoti ir trinti tik savo užrašus.
           Administratoriaus paskyrą parengia sistemos prižiūrėtojas.
         </p>
         <p>

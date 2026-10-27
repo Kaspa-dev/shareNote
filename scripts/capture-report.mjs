@@ -13,10 +13,23 @@ try {
     groups: [{ id: 1, name: 'Saityno technologijos', description: 'Paskaitų medžiaga ir laboratoriniai darbai.', organizationId: 1 }],
     notes: [{ id: 1, title: 'HTTP metodai', content: 'GET skaito, POST sukuria, PUT pakeičia, DELETE pašalina.\n\nUžklausų duomenys perduodami JSON formatu.', category: 'REST', groupId: 1 }],
   };
+  for (const [resource, items] of Object.entries(data)) {
+    for (const item of items) {
+      const collection = resource === 'organizations' ? '/api/organizations'
+        : resource === 'groups' ? `/api/organizations/${item.organizationId}/groups`
+          : `/api/organizations/${data.groups.find(group => group.id === item.groupId).organizationId}/groups/${item.groupId}/notes`;
+      const self = `${collection}/${item.id}`;
+      item._links = { self: { href: self }, collection: { href: collection },
+        ...(resource === 'organizations' ? { groups: { href: `${self}/groups` } } : {}),
+        ...(resource === 'groups' ? { notes: { href: `${self}/notes` } } : {}),
+      };
+    }
+  }
   await page.route('**/api/**', async route => {
-    const [resource, id] = new URL(route.request().url()).pathname.slice(5).split('/');
+    const parts = new URL(route.request().url()).pathname.slice(5).split('/');
+    const [resource, id] = parts.slice(parts.length >= 5 ? 4 : parts.length >= 3 ? 2 : 0);
     if (resource === 'auth') return route.fulfill({ json: {
-      accessToken: `demo.${Buffer.from(JSON.stringify({role: 'ADMIN'})).toString('base64url')}.demo`, tokenType: 'Bearer', expiresIn: 3600,
+      accessToken: `demo.${Buffer.from(JSON.stringify({role: 'ADMIN'})).toString('base64url')}.demo`, tokenType: 'Bearer', expiresIn: 180,
     }});
     if (route.request().method() !== 'GET') throw new Error('Report capture must not change data');
     await route.fulfill({ json: id ? data[resource].find(x => x.id === Number(id)) : data[resource] });

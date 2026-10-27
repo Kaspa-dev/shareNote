@@ -1,9 +1,21 @@
+import { useState } from "react";
 import { BookOpen, ChevronRight, RefreshCw, Search } from "lucide-react";
 import { sections, icons } from "./sections.js";
 import { filterRecords } from "./filterRecords.js";
+import { priorities } from "./priorities.js";
 
 export default function Collection({ section, data, admin, loading, error, query, setQuery, filter, setFilter, refresh, openItem }) {
   const rows = filterRecords(data[section], section, query, filter);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState({ key: "", page: 1 });
+  const pageKey = JSON.stringify([section, query, filter, pageSize]);
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const page = pagination.key === pageKey ? Math.min(pagination.page, pageCount) : 1;
+  if (pagination.key !== pageKey || pagination.page !== page) {
+    setPagination({ key: pageKey, page });
+  }
+  const start = (page - 1) * pageSize;
+  const visibleRows = rows.slice(start, start + pageSize);
   const Icon = icons[section];
   return (
     <section
@@ -37,9 +49,6 @@ export default function Collection({ section, data, admin, loading, error, query
                 ? "Visos grupės"
                 : "Visos organizacijos"}
             </option>
-            {section === "groups" && (
-              <option value="null">Savarankiškos grupės</option>
-            )}
             {data[section === "notes" ? "groups" : "organizations"].map(
               (g) => (
                 <option value={g.id} key={g.id}>
@@ -81,7 +90,7 @@ export default function Collection({ section, data, admin, loading, error, query
         </div>
       ) : error ? null : rows.length ? (
         <div className="record-list">
-          {rows.map((item) => (
+          {visibleRows.map((item) => (
             <button
               className="record"
               key={item.id}
@@ -96,13 +105,15 @@ export default function Collection({ section, data, admin, loading, error, query
                     <>
                       {item.category}
                       <span>·</span>
+                      Svarba: {priorities[item.priority || "MEDIUM"]}
+                      <span>·</span>
                       {data.groups.find((g) => g.id === item.groupId)
                         ?.name || "Grupė"}
                     </>
                   ) : section === "groups" ? (
                     data.organizations.find(
                       (o) => o.id === item.organizationId,
-                    )?.name || "Savarankiška grupė"
+                    )?.name || "Organizacija nerasta"
                   ) : (
                     "Organizacija"
                   )}
@@ -143,6 +154,24 @@ export default function Collection({ section, data, admin, loading, error, query
             </button>
           )}
         </div>
+      )}
+      {!loading && !error && rows.length > 0 && (
+        <nav className="pagination" aria-label="Puslapiavimas">
+          <label>
+            Įrašų puslapyje
+            <select aria-label="Įrašų puslapyje" value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}>
+              {[10, 25, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </label>
+          <span role="status">{start + 1}–{Math.min(start + pageSize, rows.length)} iš {rows.length} · {page} / {pageCount}</span>
+          <div className="pagination-actions">
+            <button className="secondary" disabled={page === 1}
+              onClick={() => setPagination({ key: pageKey, page: page - 1 })}>Ankstesnis</button>
+            <button className="secondary" disabled={page === pageCount}
+              onClick={() => setPagination({ key: pageKey, page: page + 1 })}>Kitas</button>
+          </div>
+        </nav>
       )}
       <div className="collection-bottom">
         <span>

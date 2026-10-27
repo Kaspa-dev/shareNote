@@ -485,11 +485,12 @@ nav button:hover {
 }
 .record-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 10px;
   color: #69805f;
   overflow: hidden;
-  white-space: nowrap;
+  white-space: normal;
   text-overflow: ellipsis;
 }
 .record-body strong {
@@ -616,6 +617,35 @@ nav button:hover {
 .auth-panel form > .primary {
   margin-top: 4px;
   justify-content: space-between;
+}
+.priority-field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.priority-field legend {
+  padding: 0;
+  margin-bottom: 9px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.priority-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.priority-options label {
+  flex-direction: row;
+  align-items: center;
+  min-height: 32px;
+  cursor: pointer;
+}
+.priority-options input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: var(--green);
 }
 .checkbox {
   flex-direction: row;
@@ -981,6 +1011,32 @@ dialog::backdrop {
   .auth-layout {
     min-height: calc(100vh - 250px);
   }
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.pagination label, .pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pagination select {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--green);
+}
+.pagination button:disabled {
+  cursor: default;
 }
 @media (prefers-reduced-motion: reduce) {
   *,

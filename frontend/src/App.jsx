@@ -13,7 +13,7 @@ export default function App() {
   const {
     session, section, data, query, setQuery, filter, setFilter,
     menu, setMenu, modal, setModal, loading, error, notice, setNotice,
-    busy, admin, logout, expired, navigate, openItem, remove, login, refresh, saved,
+    busy, admin, editor, canCreate, canEdit, logout, expired, navigate, openItem, remove, login, refresh, saved,
   } = useAppController();
   const closeModal = () => setModal(null);
 
@@ -24,7 +24,7 @@ export default function App() {
         navigate={navigate} logout={logout} />
       {notice && <Notice notice={notice} onDismiss={() => setNotice("")} />}
       {!session ? <Auth onLogin={login} /> : (
-        <Workspace section={section} data={data} admin={admin} navigate={navigate}
+        <Workspace section={section} data={data} admin={admin} editor={editor} canCreate={canCreate} navigate={navigate}
           setModal={setModal} loading={loading} error={error} query={query}
           setQuery={setQuery} filter={filter} setFilter={setFilter}
           refresh={refresh} openItem={openItem} />
@@ -36,7 +36,7 @@ export default function App() {
           onExpired={expired} onClose={closeModal} onSaved={saved} />
       )}
       {modal?.type === "detail" && (
-        <DetailDialog item={modal.item} section={section} data={data} admin={admin}
+        <DetailDialog item={modal.item} section={section} data={data} canEdit={canEdit}
           onClose={closeModal}
           onDelete={() => setModal({ type: "delete", item: modal.item })}
           onEdit={() => setModal({ type: "edit", item: modal.item })} />

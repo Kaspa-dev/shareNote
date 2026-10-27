@@ -1,8 +1,9 @@
 import { Pencil, Trash2 } from "lucide-react";
 import Modal from "../../components/Modal.jsx";
 import { sections } from "./sections.js";
+import { priorities } from "./priorities.js";
 
-export default function DetailDialog({ item, section, data, admin, onClose, onDelete, onEdit }) {
+export default function DetailDialog({ item, section, data, canEdit, onClose, onDelete, onEdit }) {
   return (
     <Modal
       title={item.title || item.name}
@@ -17,9 +18,12 @@ export default function DetailDialog({ item, section, data, admin, onClose, onDe
           "Aprašymas nepridėtas."}
       </p>
       {section === "notes" && (
+        <p className="detail-parent">Svarba: {priorities[item.priority || "MEDIUM"]}</p>
+      )}
+      {section === "notes" && (
         <p className="detail-parent">
           Grupė:{" "}
-          {data.groups.find((g) => g.id === item.groupId)?.name}
+          {item.group.name}
         </p>
       )}
       {section === "groups" && (
@@ -27,10 +31,10 @@ export default function DetailDialog({ item, section, data, admin, onClose, onDe
           Organizacija:{" "}
           {data.organizations.find(
             (o) => o.id === item.organizationId,
-          )?.name || "Savarankiška grupė"}
+          )?.name || "Organizacija nerasta"}
         </p>
       )}
-      {admin && (
+      {canEdit && (
         <div className="modal-actions">
           <button
             className="danger-quiet"

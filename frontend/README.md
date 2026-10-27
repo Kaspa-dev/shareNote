@@ -9,9 +9,20 @@ npm run build
 npm test
 ```
 
-The development server proxies `/api` using `vite.config.js`. Browser tests mock
+The development server runs at http://localhost:3000 and proxies `/api` to the
+local backend at http://127.0.0.1:8080 using `vite.config.js`. From the repository
+root, `powershell -ExecutionPolicy Bypass -File scripts/start.ps1` starts PostgreSQL
+in Docker and both application processes locally (Java 21+ and Node.js required).
+Keep that terminal open; Ctrl+C stops the app, and `docker compose down` stops
+the database without deleting its volume. Browser tests use port 5173 and mock
 the API and do not need the backend running. Playwright requires an installed
 browser; use `npx playwright install chromium` if it is missing.
+
+To run the backend in its own terminal, use `./scripts/start.ps1 -BackendOnly`
+from the repository root, then run `npm run dev` here in another terminal.
+The launcher reads `JAVA_HOME` from the root `.env`, for example
+`JAVA_HOME='C:\Program Files\Java\jdk-21'`. An existing environment variable
+takes precedence. Direct `mvnw.cmd` commands do not load `.env`.
 
 ## Source structure
 

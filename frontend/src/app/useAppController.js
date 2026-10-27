@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { readSession, request, saveSession, endSession } from "../services/api.js";
+import { useEffect, useState } from "react";
+import { readSession, request, resourceLink, saveSession, endSession } from "../services/api.js";
 import { emptyData } from "../features/library/sections.js";
 import useSessionRenewal from "../features/auth/useSessionRenewal.js";
 import useLibraryData from "../features/library/useLibraryData.js";
@@ -15,7 +15,17 @@ export default function useAppController() {
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const { data, setData, loading, error, setError } = useLibraryData(session, revision, expired);
+  useEffect(() => {
+    setData(emptyData);
+    setModal(null);
+    setMenu(false);
+    setError("");
+  }, [session?.sessionId]);
   const admin = session?.role === "ADMIN";
+  const editor = session?.role === "EDITOR";
+  const canCreate = admin || (editor && section === "notes");
+  const canEdit = admin || (editor && section === "notes" && session?.userId != null &&
+    modal?.item?.ownerId != null && String(modal.item.ownerId) === String(session.userId));
   function logout(message = "") {
     endSession().catch(() => setNotice("Atsijungta šiame įrenginyje. Serverio sesijos atšaukti nepavyko."));
     setSession(null);
@@ -38,7 +48,7 @@ export default function useAppController() {
   async function openItem(item) {
     setError("");
     try {
-      const fresh = await request(`${section}/${item.id}`, {
+      const fresh = await request(resourceLink(item), {
         token: session.token,
       });
       setModal({ type: "detail", item: fresh });
@@ -50,7 +60,7 @@ export default function useAppController() {
   async function remove() {
     setBusy(true);
     try {
-      await request(`${section}/${modal.item.id}`, {
+      await request(resourceLink(modal.item), {
         token: session.token,
         method: "DELETE",
       });
@@ -65,8 +75,7 @@ export default function useAppController() {
     }
   }
   function login(value) {
-    saveSession(value);
-    setSession(value);
+    setSession(saveSession(value));
     setNotice("");
   }
   function refresh() {
@@ -80,6 +89,6 @@ export default function useAppController() {
   return {
     session, section, data, query, setQuery, filter, setFilter,
     menu, setMenu, modal, setModal, loading, error, notice, setNotice,
-    busy, admin, logout, expired, navigate, openItem, remove, login, refresh, saved,
+    busy, admin, editor, canCreate, canEdit, logout, expired, navigate, openItem, remove, login, refresh, saved,
   };
 }

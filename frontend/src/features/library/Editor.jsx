@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Modal from "../../components/Modal.jsx";
-import { request } from "../../services/api.js";
+import { request, resourceWrite } from "../../services/api.js";
 import { singular } from "./sections.js";
+import { priorities } from "./priorities.js";
 
 export default function Editor({ section, item, data, token, onSaved, onClose, onExpired }) {
   const [busy, setBusy] = useState(false);
@@ -12,16 +13,15 @@ export default function Editor({ section, item, data, token, onSaved, onClose, o
     setBusy(true);
     setError("");
     const body = Object.fromEntries(new FormData(event.currentTarget));
-    if (note) body.groupId = Number(body.groupId);
+    if (note) body.groupId = item?.groupId ?? Number(body.groupId);
     if (section === "groups")
-      body.organizationId = body.organizationId
-        ? Number(body.organizationId)
-        : null;
+      body.organizationId = item?.organizationId ?? Number(body.organizationId);
     try {
-      await request(`${section}${item ? `/${item.id}` : ""}`, {
+      const write = resourceWrite(section, item, body, data);
+      await request(write.path, {
         token,
         method: item ? "PUT" : "POST",
-        body,
+        body: write.body,
       });
       onSaved();
     } catch (e) {
@@ -73,6 +73,7 @@ export default function Editor({ section, item, data, token, onSaved, onClose, o
               <select
                 aria-label="Grupė"
                 name="groupId"
+                disabled={Boolean(item)}
                 defaultValue={item?.groupId || ""}
                 required
               >
@@ -88,15 +89,31 @@ export default function Editor({ section, item, data, token, onSaved, onClose, o
             </label>
           </div>
         )}
+        {note && (
+          <fieldset className="priority-field">
+            <legend>Svarba</legend>
+            <div className="priority-options">
+              {Object.entries(priorities).map(([value, label]) => (
+                <label key={value}>
+                  <input type="radio" name="priority" value={value}
+                    defaultChecked={(item?.priority || "MEDIUM") === value} required />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         {section === "groups" && (
           <label>
             Organizacija
             <select
               aria-label="Organizacija"
               name="organizationId"
+              disabled={Boolean(item)}
+              required
               defaultValue={item?.organizationId || ""}
             >
-              <option value="">Savarankiška grupė</option>
+              <option value="" disabled>Pasirinkite organizaciją</option>
               {data.organizations.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
@@ -136,11 +153,14 @@ export default function Editor({ section, item, data, token, onSaved, onClose, o
           </button>
           <button
             className="primary"
-            disabled={busy || (note && !data.groups.length)}
+            disabled={busy || (note && !data.groups.length) || (section === "groups" && !data.organizations.length)}
           >
             {busy ? "Saugoma…" : "Išsaugoti"}
           </button>
         </div>
+        {section === "groups" && !data.organizations.length && (
+          <p className="error">Pirmiausia sukurkite organizaciją.</p>
+        )}
         {note && !data.groups.length && (
           <p className="error">Pirmiausia sukurkite grupę.</p>
         )}
