@@ -57,7 +57,7 @@ Frontend failų struktūra, modulių atsakomybės ir kūrimo komandos aprašytos
 | `api` | Java 21, Spring Boot 3.5.5, Spring Security; autentifikavimas, vaidmenys, validacija, CRUD ir klaidų atsakymai. |
 | `db` | PostgreSQL 17; organizacijų, grupių, užrašų ir paskyrų lentelės, išoriniai raktai ir nuolatinis duomenų saugojimas. |
 | Migracijos | Flyway paleidimo metu sukuria / atnaujina schemą ir pradinius demonstracinius duomenis. |
-| Azure tarpinis serveris | Caddy 2 priima HTTPS, nukreipia į frontend, o Swagger ir OpenAPI užklausas – tiesiai į API. |
+| Azure tarpinis serveris | Caddy 2 priima HTTPS, pateikia React statinius failus, o `/api/`, Swagger ir OpenAPI užklausas nukreipia į API. Azure aplinkoje veikia trys konteineriai: Caddy, API ir PostgreSQL. |
 
 API kontroleriai priima HTTP užklausas, `ShareNoteService` vykdo dalykinę logiką ir SQL per `JdbcClient`, o `AuthService` valdo paskyras bei žetonus. `ApiErrors` vienodina klaidas į `application/problem+json`. Ryšiai duomenų bazėje: `organizations 1 — 0..* groups`, `groups 1 — 0..* notes`; iš grupės pusės organizacija privaloma, iš užrašo pusės grupė privaloma. `sessions` saugo prisijungimo sesijas, įrenginį, paskutinio atnaujinimo JWT maišą ir atšaukimo būseną. `app_users` saugo paskyras ir vaidmenis, bet neturi narystės ryšių su grupėmis.
 
