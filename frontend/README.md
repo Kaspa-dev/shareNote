@@ -24,6 +24,25 @@ The launcher reads `JAVA_HOME` from the root `.env`, for example
 `JAVA_HOME='C:\Program Files\Java\jdk-21'`. An existing environment variable
 takes precedence. Direct `mvnw.cmd` commands do not load `.env`.
 
+## Azure deployment
+
+The Dockerfile builds React with Node.js and copies the static output into a
+Caddy image. `deploy/compose.azure.yaml` runs this image as `gateway`, alongside
+the API and PostgreSQL containers. It mounts `deploy/Caddyfile`, which configures
+HTTPS, serves the frontend with an SPA fallback, and proxies `/api/`, Swagger,
+and OpenAPI requests directly to the API without stripping their paths.
+
+To rebuild and apply this setup on the Azure VM, with the deployment environment
+variables (`DOMAIN`, `DB_PASSWORD`, and `ADMIN_PASSWORD`) configured, run from
+the repository root:
+
+```sh
+docker compose -f deploy/compose.azure.yaml up -d --build --remove-orphans
+```
+
+`--remove-orphans` removes the old standalone frontend container when upgrading
+from the Nginx setup. Existing database and Caddy certificate volumes are retained.
+
 ## Source structure
 
 ```text
