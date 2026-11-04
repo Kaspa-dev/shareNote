@@ -10,16 +10,28 @@ lt/sharenote/
   ShareNoteApplication.java       Spring Boot entry point and OpenAPI metadata
   config/                        Security and JSON configuration
   controller/                    HTTP routes, request validation, responses
-  service/                       Business logic, transactions, JDBC queries
+  service/                       Business logic, authorization, transactions
+  repository/                    JDBC queries and database row mapping
   model/                         Resource records and API request/response records
   exception/                     API exceptions and global error handling
   pagination/                    Pagination parameters and bounds
 ```
 
-Controllers delegate to services. Services use model records and shared exceptions;
-they do not depend on controllers. SQL remains in the services, matching the
-existing JDBC implementation. `Models` groups the library resource and input records;
-authentication request/response records have their own files.
+The dependency flow is **Controller -> Service -> Repository -> Database**.
+Controllers delegate to services, which enforce business rules, authorization, and
+transaction boundaries. Repositories use `JdbcClient` for SQL and row mapping;
+they return records, optional results, or affected-row counts. Services translate
+missing results into API errors.
+
+`OrganizationRepository`, `GroupRepository`, and `NoteRepository` persist library
+resources; `UserRepository` and `SessionRepository` persist accounts and sessions.
+Queries using `FOR UPDATE` run inside the calling service transaction so scoped
+resource checks, ownership checks, and refresh-token rotation retain their locks
+until the operation completes.
+
+`Models` groups the library resource and input records. Authentication records,
+including the internal `Account` and `RefreshSession` database records, have their
+own files. Repositories do not depend on services or controllers.
 
 The application class stays in the root package so Spring scans all subpackages.
 Configuration and Flyway migrations remain in `src/main/resources`; migration

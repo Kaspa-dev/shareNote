@@ -4,7 +4,9 @@ import lt.sharenote.exception.ApiException;
 import lt.sharenote.pagination.Pagination;
 import java.util.List;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import lt.sharenote.repository.OrganizationRepository;
+import lt.sharenote.repository.GroupRepository;
+import lt.sharenote.repository.NoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -14,107 +16,94 @@ import static lt.sharenote.model.Models.*;
 @Service
 @Transactional
 public class ShareNoteService {
-    private final JdbcClient db;
-    public ShareNoteService(JdbcClient db) { this.db = db; }
+    private final OrganizationRepository organizations;
+    private final GroupRepository groups;
+    private final NoteRepository notes;
+
+    public ShareNoteService(OrganizationRepository organizations, GroupRepository groups, NoteRepository notes) {
+        this.organizations = organizations;
+        this.groups = groups;
+        this.notes = notes;
+    }
 
     private ApiException missing(String resource, long id) {
         return new ApiException(HttpStatus.NOT_FOUND, resource + " (id=" + id + ") was not found.");
     }
 
     public List<Organization> organizations() {
-        return db.sql("SELECT * FROM organizations ORDER BY id").query(Organization.class).list();
+        return organizations.findAll();
     }
     public List<Organization> organizations(Pagination pagination) {
         if (pagination == null) return organizations();
-        return db.sql("SELECT * FROM organizations ORDER BY id LIMIT ? OFFSET ?")
-                .param(pagination.size()).param(pagination.offset()).query(Organization.class).list();
+        return organizations.findAll(pagination);
     }
     public List<Group> groups(long organizationId, Pagination pagination) {
         if (pagination == null) return groups(organizationId);
         organization(organizationId);
-        return db.sql("SELECT * FROM groups WHERE organization_id = ? ORDER BY id LIMIT ? OFFSET ?")
-                .param(organizationId).param(pagination.size()).param(pagination.offset()).query(Group.class).list();
+        return groups.findByOrganizationId(organizationId, pagination);
     }
     public List<Note> notes(long organizationId, long groupId, Pagination pagination) {
         if (pagination == null) return notes(organizationId, groupId);
         group(organizationId, groupId);
-        return db.sql("SELECT * FROM notes WHERE group_id = ? ORDER BY id LIMIT ? OFFSET ?")
-                .param(groupId).param(pagination.size()).param(pagination.offset()).query(Note.class).list();
+        return notes.findByGroupId(groupId, pagination);
     }
     public Organization organization(long id) {
-        return db.sql("SELECT * FROM organizations WHERE id = ?").param(id)
-                .query(Organization.class).optional().orElseThrow(() -> missing("Organization", id));
+        return organizations.findById(id).orElseThrow(() -> missing("Organization", id));
     }
     public Organization createOrganization(OrganizationInput input) {
-        return db.sql("INSERT INTO organizations(name, description) VALUES (?, ?) RETURNING *")
-                .param(input.name()).param(input.description()).query(Organization.class).single();
+        return organizations.create(input);
     }
     public Organization updateOrganization(long id, OrganizationInput input) {
-        return db.sql("UPDATE organizations SET name = ?, description = ? WHERE id = ? RETURNING *")
-                .param(input.name()).param(input.description()).param(id).query(Organization.class)
-                .optional().orElseThrow(() -> missing("Organization", id));
+        return organizations.update(id, input).orElseThrow(() -> missing("Organization", id));
     }
     public void deleteOrganization(long id) {
-        if (db.sql("DELETE FROM organizations WHERE id = ?").param(id).update() == 0)
+        if (organizations.delete(id) == 0)
             throw missing("Organization", id);
     }
 
     public List<Group> groups(Long organizationId) {
         if (organizationId == null)
-            return db.sql("SELECT * FROM groups ORDER BY id").query(Group.class).list();
+            return groups.findAll();
         organization(organizationId);
-        return db.sql("SELECT * FROM groups WHERE organization_id = ? ORDER BY id")
-                .param(organizationId).query(Group.class).list();
+        return groups.findByOrganizationId(organizationId);
     }
     public Group group(long id) {
-        return db.sql("SELECT * FROM groups WHERE id = ?").param(id).query(Group.class)
-                .optional().orElseThrow(() -> missing("Group", id));
+        return groups.findById(id).orElseThrow(() -> missing("Group", id));
     }
     public Group createGroup(GroupInput input) {
         organization(input.organizationId());
-        return db.sql("INSERT INTO groups(name, description, organization_id) VALUES (?, ?, ?) RETURNING *")
-                .param(input.name()).param(input.description()).param(input.organizationId())
-                .query(Group.class).single();
+        return groups.create(input);
     }
     public Group updateGroup(long id, GroupInput input) {
         group(id);
         organization(input.organizationId());
-        return db.sql("UPDATE groups SET name = ?, description = ?, organization_id = ? WHERE id = ? RETURNING *")
-                .param(input.name()).param(input.description()).param(input.organizationId())
-                .param(id).query(Group.class).optional().orElseThrow(() -> missing("Group", id));
+        return groups.update(id, input).orElseThrow(() -> missing("Group", id));
     }
     public void deleteGroup(long id) {
-        if (db.sql("DELETE FROM groups WHERE id = ?").param(id).update() == 0) throw missing("Group", id);
+        if (groups.delete(id) == 0) throw missing("Group", id);
     }
 
     public List<Note> notes(Long groupId) {
-        if (groupId == null) return db.sql("SELECT * FROM notes ORDER BY id").query(Note.class).list();
+        if (groupId == null) return notes.findAll();
         group(groupId);
-        return db.sql("SELECT * FROM notes WHERE group_id = ? ORDER BY id").param(groupId).query(Note.class).list();
+        return notes.findByGroupId(groupId);
     }
     public Note note(long id) {
-        return db.sql("SELECT * FROM notes WHERE id = ?").param(id).query(Note.class)
-                .optional().orElseThrow(() -> missing("Note", id));
+        return notes.findById(id).orElseThrow(() -> missing("Note", id));
     }
     public Note createNote(NoteInput input) {
         var actor = noteWriter();
         group(input.groupId());
-        return db.sql("INSERT INTO notes(title, content, category, group_id, owner_id, priority) VALUES (?, ?, ?, ?, ?, ?) RETURNING *")
-                .param(input.title()).param(input.content()).param(input.category()).param(input.groupId())
-                .param(Long.parseLong(actor.getToken().getSubject()))
-                .param(input.priority())
-                .query(Note.class).single();
+        return notes.create(input, Long.parseLong(actor.getToken().getSubject()));
     }
     public Note updateNote(long id, NoteInput input) {
         requireNoteOwner(id);
         group(input.groupId());
-        return db.sql("UPDATE notes SET title = ?, content = ?, category = ?, group_id = ?, priority = ? WHERE id = ? RETURNING *")
-                .param(input.title()).param(input.content()).param(input.category()).param(input.groupId()).param(input.priority()).param(id)
-                .query(Note.class).optional().orElseThrow(() -> missing("Note", id));
+        return notes.update(id, input).orElseThrow(() -> missing("Note", id));
     }
     public void deleteNote(long id) {
         requireNoteOwner(id);
-        if (db.sql("DELETE FROM notes WHERE id = ?").param(id).update() == 0) throw missing("Note", id);
+        if (notes.delete(id) == 0) throw missing("Note", id);
     }
 
     private JwtAuthenticationToken noteWriter() {
@@ -127,8 +116,7 @@ public class ShareNoteService {
 
     private void requireNoteOwner(long id) {
         var actor = noteWriter();
-        var note = db.sql("SELECT * FROM notes WHERE id = ? FOR UPDATE").param(id).query(Note.class)
-                .optional().orElseThrow(() -> missing("Note", id));
+        var note = notes.findByIdForUpdate(id).orElseThrow(() -> missing("Note", id));
         boolean admin = actor.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!admin && (note.ownerId() == null || !note.ownerId().toString().equals(actor.getToken().getSubject())))
             throw new ApiException(HttpStatus.FORBIDDEN, "Editors can change only their own notes.");
@@ -136,8 +124,7 @@ public class ShareNoteService {
     // Lock the child during scoped operations so a concurrent move cannot bypass the parent check.
     public Group group(long organizationId, long id) {
         organization(organizationId);
-        return db.sql("SELECT * FROM groups WHERE id = ? AND organization_id = ? FOR UPDATE")
-                .param(id).param(organizationId).query(Group.class).optional()
+        return groups.findByIdAndOrganizationIdForUpdate(id, organizationId)
                 .orElseThrow(() -> missing("Group", id));
     }
     public Group createGroup(long organizationId, NestedGroupInput input) {
@@ -158,8 +145,7 @@ public class ShareNoteService {
     }
     public Note note(long organizationId, long groupId, long id) {
         group(organizationId, groupId);
-        return db.sql("SELECT * FROM notes WHERE id = ? AND group_id = ? FOR UPDATE")
-                .param(id).param(groupId).query(Note.class).optional()
+        return notes.findByIdAndGroupIdForUpdate(id, groupId)
                 .orElseThrow(() -> missing("Note", id));
     }
     public Note createNote(long organizationId, long groupId, NestedNoteInput input) {
