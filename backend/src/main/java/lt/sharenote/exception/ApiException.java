@@ -8,4 +8,7 @@ public class ApiException extends RuntimeException {
         super(message);
         this.status = status;
     }
+    public static ApiException notFound(String resource, long id) {
+        return new ApiException(HttpStatus.NOT_FOUND, resource + " (id=" + id + ") was not found.");
+    }
 }
