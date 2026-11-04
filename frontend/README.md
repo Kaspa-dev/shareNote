@@ -43,14 +43,32 @@ docker compose -f deploy/compose.azure.yaml up -d --build --remove-orphans
 `--remove-orphans` removes the old standalone frontend container when upgrading
 from the Nginx setup. Existing database and Caddy certificate volumes are retained.
 
-## Source structure
+## Pages and navigation
+
+React Router provides `/login`, `/register`, `/notes`, `/groups`, and
+`/organizations`. The library pages require a session; signing in or registering
+returns users to the requested library URL. `/` redirects to notes when signed
+in and login otherwise. Unknown URLs display a not-found page.
+
+Header and sidebar links support bookmarks, direct loads, refreshes, and browser
+Back/Forward. Section changes reset search, filters, and open dialogs. Record
+details, creation, editing, and deletion remain dialogs. Existing role permissions
+and session renewal still apply. Production hosting must serve `index.html` for
+frontend routes; the existing `deploy/Caddyfile` already provides this fallback.
+
+## Source layout
 
 ```text
 src/
   main.jsx                    React entry point, fonts and global CSS
-  App.jsx                     Composes the page and selects active dialogs
+  App.jsx                     Shared layout, routes and active dialogs
   app/
-    useAppController.js       Navigation, session state and user actions
+    useAppController.js       Route-derived section, session state and user actions
+    RequireSession.jsx       Protected-route redirect preserving destination
+  pages/
+    AuthPage.jsx              Login/registration and signed-in redirects
+    LibraryPages.jsx          Notes, groups and organizations page components
+    NotFoundPage.jsx          Unknown URL fallback
   components/
     Modal.jsx                 Shared dialog behavior and focus handling
     Notice.jsx                Dismissible status message

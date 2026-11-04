@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router";
 import { ArrowRight, BookOpen, Check } from "lucide-react";
 import { request } from "../../services/api.js";
 
-export default function Auth({ onLogin }) {
-  const [register, setRegister] = useState(false);
+export default function Auth({ onLogin, register = false }) {
+  const location = useLocation();
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -121,16 +122,15 @@ export default function Auth({ onLogin }) {
         </form>
         <p className="auth-switch">
           {register ? "Jau turite paskyrą?" : "Pirmą kartą čia?"}{" "}
-          <button
+          <Link
             className="text-button"
-            disabled={busy}
-            onClick={() => {
-              setRegister(!register);
-              setError("");
-            }}
+            to={register ? "/login" : "/register"}
+            state={location.state}
+            onClick={(event) => { if (busy) event.preventDefault(); }}
+            aria-disabled={busy || undefined}
           >
             {register ? "Prisijunkite" : "Registruokitės"}
-          </button>
+          </Link>
         </p>
         <div className="auth-note">
           <Check size={16} />

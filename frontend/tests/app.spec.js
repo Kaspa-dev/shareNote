@@ -160,12 +160,12 @@ test("editor manages own notes while other authors and library structure stay re
     await expect(page.getByRole("dialog").getByRole("button", { name: "Ištrinti", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
   }
-  await page.getByRole("navigation").getByRole("button", { name: "Grupės", exact: true }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Grupės", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sukurti grupę" })).toHaveCount(0);
   await page.getByRole("button", { name: /Saityno technologijos Grupė/ }).click();
   await expect(page.getByRole("dialog").getByRole("button", { name: "Redaguoti", exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await page.getByRole("navigation").getByRole("button", { name: "Organizacijos", exact: true }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Organizacijos", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sukurti organizaciją" })).toHaveCount(0);
 });
 
@@ -195,7 +195,7 @@ test("pagination navigates, searches all records, changes size and resets on sec
   await expect(page.locator(".record")).toHaveCount(25);
   await pagination.getByRole("button", { name: "Kitas" }).click();
   await expect(page.locator(".record")).toHaveCount(1);
-  await page.getByRole("button", { name: "Grupės", exact: false }).first().click();
+  await page.getByRole("link", { name: "Grupės", exact: false }).first().click();
   await expect(pagination).toContainText("1 / 1");
 });
 
@@ -275,7 +275,7 @@ test("reader search, modal keyboard dismissal and mobile navigation", async ({
   await page.getByRole("button", { name: "Atidaryti meniu" }).click();
   await page
     .getByRole("navigation")
-    .getByRole("button", { name: "Grupės", exact: true })
+    .getByRole("link", { name: "Grupės", exact: true })
     .click();
   await expect(page.getByRole("heading", { name: "Grupės" })).toBeVisible();
   expect(
@@ -292,7 +292,7 @@ test("relationship conflicts stay visible and expired sessions return to login",
   await login(page);
   await page
     .getByRole("navigation")
-    .getByRole("button", { name: "Grupės", exact: true })
+    .getByRole("link", { name: "Grupės", exact: true })
     .click();
   await page
     .getByRole("button", { name: /Saityno technologijos Grupė/ })
@@ -336,7 +336,7 @@ test("desktop workspace and responsive image fit their containers", async ({
 test("group creation, editing and deletion follow discovered URLs", async ({ page }) => {
   await mockApi(page, "ADMIN", undefined, {}, true);
   await login(page);
-  await page.getByRole("navigation").getByRole("button", { name: "Grupės", exact: true }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Grupės", exact: true }).click();
   await page.getByRole("button", { name: "Sukurti grupę" }).click();
   await page.getByLabel("Pavadinimas").fill("Nauja grupė");
   const organization = page.getByLabel("Organizacija", { exact: true });
@@ -368,7 +368,7 @@ test("group creation, editing and deletion follow discovered URLs", async ({ pag
 test("group creation explains when an organization must be created first", async ({ page }) => {
   await mockApi(page, "ADMIN", []);
   await login(page);
-  await page.getByRole("navigation").getByRole("button", { name: "Grupės", exact: true }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Grupės", exact: true }).click();
   await page.getByRole("button", { name: "Sukurti grupę" }).click();
   await expect(page.getByText("Pirmiausia sukurkite organizaciją.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Išsaugoti" })).toBeDisabled();
@@ -399,10 +399,90 @@ test("missing navigation links show an error without guessing a child URL", asyn
 test("an empty library can create its first organization at the entry point", async ({ page }) => {
   await mockApi(page, "ADMIN", [], { groups: [], notes: [] }, true);
   await login(page);
-  await page.getByRole("navigation").getByRole("button", { name: "Organizacijos", exact: true }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Organizacijos", exact: true }).click();
   await page.getByRole("button", { name: "Sukurti organizaciją" }).click();
   await page.getByLabel("Pavadinimas").fill("Pirmoji organizacija");
   await page.getByRole("button", { name: "Išsaugoti" }).click();
   await page.getByRole("button", { name: /Pirmoji organizacija/ }).click();
   await expect(page.getByRole("dialog")).toContainText("Pirmoji organizacija");
+});
+
+
+for (const [path, heading] of [["/notes", "Užrašai"], ["/groups", "Grupės"], ["/organizations", "Organizacijos"]]) {
+  test(`protected deep link ${path} returns after login and survives refresh`, async ({ page }) => {
+    await mockApi(page);
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel("Naudotojo vardas", { exact: true }).fill("test.admin");
+    await page.getByLabel("Slaptažodis", { exact: true }).fill("test-password-123");
+    await page.getByRole("button", { name: "Prisijungti", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
+    await expect(page.getByRole("heading", { name: heading, level: 1 })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: heading, level: 1 })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Pagrindinis meniu" }).getByRole("link", { name: heading })).toHaveAttribute("aria-current", "page");
+  });
+}
+
+test("section links support history and clear section-specific UI", async ({ page }) => {
+  await mockApi(page);
+  await login(page);
+  const nav = page.getByRole("navigation", { name: "Pagrindinis meniu" });
+  await page.getByRole("searchbox").fill("HTTP");
+  await page.getByRole("button", { name: /HTTP metodai/ }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await nav.getByRole("link", { name: "Grupės", exact: true }).click();
+  await expect(page).toHaveURL(/\/groups$/);
+  await expect(page.getByRole("searchbox")).toHaveValue("");
+  await nav.getByRole("link", { name: "Organizacijos", exact: true }).click();
+  await expect(page).toHaveURL(/\/organizations$/);
+  await page.getByRole("button", { name: "Sukurti organizaciją" }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/groups$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Grupės", level: 1 })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/notes$/);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/groups$/);
+  await page.getByRole("button", { name: "Atsijungti", exact: true }).last().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("searchbox")).toHaveCount(0);
+});
+
+test("registration has its own URL and preserves the requested destination", async ({ page }) => {
+  await mockApi(page, "USER");
+  await page.goto("/organizations");
+  await page.getByRole("link", { name: "Registruokitės" }).click();
+  await expect(page).toHaveURL(/\/register$/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Sukurkite paskyrą" })).toBeVisible();
+  await page.getByLabel("Naudotojo vardas", { exact: true }).fill("new.reader");
+  await page.getByLabel("Slaptažodis", { exact: true }).fill("test-password-123");
+  const request = page.waitForRequest(req => req.url().endsWith("/auth/register"));
+  await page.getByRole("button", { name: "Sukurti paskyrą" }).click();
+  await request;
+  await expect(page).toHaveURL(/\/organizations$/);
+  await expect(page.getByRole("button", { name: "Sukurti organizaciją" })).toHaveCount(0);
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/notes$/);
+  await page.goto("/register");
+  await expect(page).toHaveURL(/\/notes$/);
+});
+
+test("unknown URLs show a recoverable not-found page", async ({ page }) => {
+  await page.goto("/does-not-exist");
+  await expect(page.getByRole("heading", { name: "Puslapis nerastas" })).toBeVisible();
+  await page.getByRole("link", { name: "Grįžti į pradžią" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await mockApi(page);
+  await login(page);
+  await page.goto("/notes/missing");
+  await expect(page.getByRole("heading", { name: "Puslapis nerastas" })).toBeVisible();
+  await page.getByRole("link", { name: "Grįžti į pradžią" }).click();
+  await expect(page).toHaveURL(/\/notes$/);
 });
