@@ -1,6 +1,7 @@
 package lt.sharenote.controller;
 
-import lt.sharenote.service.ShareNoteService;
+import lt.sharenote.service.NoteService;
+import lt.sharenote.service.GroupService;
 import lt.sharenote.pagination.Pagination;
 import java.net.URI;
 import java.util.List;
@@ -24,8 +25,13 @@ import static lt.sharenote.model.ResourceRepresentations.*;
     @ApiResponse(responseCode = "404", description = "Resource or related resource not found", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 })
 public class NestedNoteController {
-    private final ShareNoteService service;
-    public NestedNoteController(ShareNoteService service) { this.service = service; }
+    private final NoteService service;
+    private final GroupService groups;
+
+    public NestedNoteController(NoteService service, GroupService groups) {
+        this.service = service;
+        this.groups = groups;
+    }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "List notes", operationId = "listGroupNotes", description = "Optional page (zero-based) and size (1–100) enable pagination, defaulting to 0 and 10. Omit both for the full list.")
@@ -33,7 +39,7 @@ public class NestedNoteController {
     public List<NoteResource> list(@PathVariable long organizationId, @PathVariable long groupId,
                            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         var pagination = Pagination.optional(page, size);
-        var group = service.group(organizationId, groupId);
+        var group = groups.group(organizationId, groupId);
         return service.notes(organizationId, groupId, pagination).stream().map(item -> represent(item, group)).toList();
     }
 
@@ -41,7 +47,7 @@ public class NestedNoteController {
     @Operation(summary = "Get note by ID", operationId = "getGroupNote")
     @ApiResponse(responseCode = "200", description = "Resource found")
     public NoteResource get(@PathVariable long organizationId, @PathVariable long groupId, @PathVariable long id) {
-        return represent(service.note(organizationId, groupId, id), service.group(organizationId, groupId));
+        return represent(service.note(organizationId, groupId, id), groups.group(organizationId, groupId));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,7 +58,7 @@ public class NestedNoteController {
     @ApiResponse(responseCode = "415", description = "Content-Type must be application/json", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<NoteResource> create(@PathVariable long organizationId, @PathVariable long groupId, @Valid @RequestBody NestedNoteInput input) {
         var result = service.createNote(organizationId, groupId, input);
-        return ResponseEntity.created(URI.create("/api/organizations/" + organizationId + "/groups/" + groupId + "/notes/" + result.id())).body(represent(result, service.group(organizationId, groupId)));
+        return ResponseEntity.created(URI.create("/api/organizations/" + organizationId + "/groups/" + groupId + "/notes/" + result.id())).body(represent(result, groups.group(organizationId, groupId)));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -62,7 +68,7 @@ public class NestedNoteController {
     @ApiResponse(responseCode = "409", description = "Resource relationship conflict", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "415", description = "Content-Type must be application/json", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public NoteResource update(@PathVariable long organizationId, @PathVariable long groupId, @PathVariable long id, @Valid @RequestBody NestedNoteInput input) {
-        return represent(service.updateNote(organizationId, groupId, id, input), service.group(organizationId, groupId));
+        return represent(service.updateNote(organizationId, groupId, id, input), groups.group(organizationId, groupId));
     }
 
     @DeleteMapping("/{id}")

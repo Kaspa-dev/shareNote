@@ -1,6 +1,6 @@
 package lt.sharenote.controller;
 
-import lt.sharenote.service.ShareNoteService;
+import lt.sharenote.service.GroupService;
 import lt.sharenote.pagination.Pagination;
 import java.net.URI;
 import java.util.List;
@@ -24,8 +24,8 @@ import static lt.sharenote.model.ResourceRepresentations.*;
     @ApiResponse(responseCode = "404", description = "Resource or related resource not found", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 })
 public class NestedGroupController {
-    private final ShareNoteService service;
-    public NestedGroupController(ShareNoteService service) { this.service = service; }
+    private final GroupService service;
+    public NestedGroupController(GroupService service) { this.service = service; }
 
     @GetMapping(value = "/groups", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "List groups", operationId = "listOrganizationGroups", description = "Optional page (zero-based) and size (1–100) enable pagination, defaulting to 0 and 10. Omit both for the full list.")
