@@ -3,7 +3,7 @@ import { sections, singular } from "./sections.js";
 import Sidebar from "./Sidebar.jsx";
 import Collection from "./Collection.jsx";
 
-export default function Workspace({ section, data, admin, editor, canCreate, navigate, setModal, loading, error, query, setQuery, filter, setFilter, refresh, openItem }) {
+export default function Workspace({ section, data, admin, editor, canCreate, setModal, loading, error, query, setQuery, filter, setFilter, refresh, openItem }) {
   return (
     <main id="main" className="workspace">
       <div className="breadcrumb">
@@ -37,7 +37,7 @@ export default function Workspace({ section, data, admin, editor, canCreate, nav
         )}
       </div>
       <div className="workspace-grid">
-        <Sidebar section={section} data={data} admin={admin} editor={editor} navigate={navigate} onHelp={() => setModal({ type: "help" })} />
+        <Sidebar data={data} admin={admin} editor={editor} onHelp={() => setModal({ type: "help" })} />
         <Collection section={section} data={data} admin={canCreate} loading={loading} error={error}
           query={query} setQuery={setQuery} filter={filter} setFilter={setFilter}
           refresh={refresh} openItem={openItem} />

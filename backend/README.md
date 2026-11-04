@@ -23,6 +23,12 @@ transaction boundaries. Repositories use `JdbcClient` for SQL and row mapping;
 they return records, optional results, or affected-row counts. Services translate
 missing results into API errors.
 
+Resource logic is split across `OrganizationService`, `GroupService`, and
+`NoteService`. Group operations validate organizations through `OrganizationService`;
+note operations validate groups through `GroupService`. These calls join the
+existing transaction, keeping scoped locks until the outer operation completes.
+Note write permissions and ownership checks stay in `NoteService`.
+
 `OrganizationRepository`, `GroupRepository`, and `NoteRepository` persist library
 resources; `UserRepository` and `SessionRepository` persist accounts and sessions.
 Queries using `FOR UPDATE` run inside the calling service transaction so scoped

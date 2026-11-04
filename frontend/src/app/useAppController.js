@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { matchPath, useLocation, useNavigate } from "react-router";
 import { readSession, request, resourceLink, saveSession, endSession } from "../services/api.js";
-import { emptyData } from "../features/library/sections.js";
+import { emptyData, sections } from "../features/library/sections.js";
 import useSessionRenewal from "../features/auth/useSessionRenewal.js";
 import useLibraryData from "../features/library/useLibraryData.js";
 
 export default function useAppController() {
   const [session, setSession] = useState(readSession);
-  const [section, setSection] = useState("notes");
+  const location = useLocation();
+  const go = useNavigate();
+  const section = Object.keys(sections).find((key) => matchPath(`/${key}`, location.pathname));
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("");
   const [menu, setMenu] = useState(false);
@@ -34,17 +37,18 @@ export default function useAppController() {
     setMenu(false);
     setError("");
     setNotice(message);
+    if (!message) go("/login", { replace: true });
   }
   function expired() {
     logout("Sesija pasibaigė. Prisijunkite iš naujo.");
   }
   useSessionRenewal(session, setSession, expired);
-  function navigate(key) {
-    setSection(key);
+  useEffect(() => {
+    setModal(null);
     setQuery("");
     setFilter("");
     setMenu(false);
-  }
+  }, [location.pathname]);
   async function openItem(item) {
     setError("");
     try {
@@ -89,6 +93,6 @@ export default function useAppController() {
   return {
     session, section, data, query, setQuery, filter, setFilter,
     menu, setMenu, modal, setModal, loading, error, notice, setNotice,
-    busy, admin, editor, canCreate, canEdit, logout, expired, navigate, openItem, remove, login, refresh, saved,
+    busy, admin, editor, canCreate, canEdit, logout, expired, openItem, remove, login, refresh, saved,
   };
 }

@@ -244,7 +244,9 @@ nav {
   align-self: stretch;
   gap: 28px;
 }
-nav button {
+nav :is(button, a) {
+  display: inline-flex;
+  align-items: center;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -252,12 +254,12 @@ nav button {
   font-size: 13px;
   color: var(--muted);
 }
-nav button[aria-current] {
+nav :is(button, a)[aria-current] {
   color: var(--green);
   border-bottom-color: var(--green);
   font-weight: 750;
 }
-nav button:hover {
+nav :is(button, a):hover {
   color: var(--green);
 }
 .account {
@@ -349,7 +351,10 @@ nav button:hover {
   display: block;
   margin: 0 12px 20px;
 }
-.sidebar > button {
+.sidebar > a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   width: 100%;
   justify-content: flex-start;
   border: 0;
@@ -360,16 +365,16 @@ nav button:hover {
   border-radius: 6px;
   font-size: 12px;
 }
-.sidebar > button span {
+.sidebar > a span {
   margin-left: auto;
   font-size: 11px;
 }
-.sidebar > button.selected {
+.sidebar > a.selected {
   background: #e6eddf;
   color: var(--green);
   font-weight: 750;
 }
-.sidebar > button:hover {
+.sidebar > a:hover {
   background: #edf1e9;
 }
 .sidebar-info {
@@ -878,13 +883,13 @@ dialog::backdrop {
     display: flex;
     flex-direction: column;
   }
-  nav button {
+  nav :is(button, a) {
     justify-content: flex-start;
     padding: 13px;
     border: 0;
     border-radius: 5px;
   }
-  nav button[aria-current] {
+  nav :is(button, a)[aria-current] {
     background: #e9efdf;
   }
   nav .mobile-logout {

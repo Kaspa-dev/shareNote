@@ -1,23 +1,20 @@
+import { Link, NavLink } from "react-router";
 import { BookOpen, LogOut, Menu, X } from "lucide-react";
 import { sections } from "../../features/library/sections.js";
 
-export default function Header({ session, section, menu, setMenu, navigate, logout }) {
+export default function Header({ session, menu, setMenu, logout }) {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <a
+        <Link
           className="brand"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("notes");
-          }}
+          to="/"
         >
           <span className="brand-icon">
             <BookOpen size={23} />
           </span>
           ShareNote<span className="brand-dot">.</span>
-        </a>
+        </Link>
         {session && (
           <>
             <button
@@ -35,13 +32,13 @@ export default function Header({ session, section, menu, setMenu, navigate, logo
               className={menu ? "open" : ""}
             >
               {Object.entries(sections).map(([key, name]) => (
-                <button
+                <NavLink
                   key={key}
-                  aria-current={section === key ? "page" : undefined}
-                  onClick={() => navigate(key)}
+                  to={`/${key}`}
+                  onClick={() => setMenu(false)}
                 >
                   {name}
-                </button>
+                </NavLink>
               ))}
               <button className="mobile-logout" onClick={() => logout()}>
                 Atsijungti

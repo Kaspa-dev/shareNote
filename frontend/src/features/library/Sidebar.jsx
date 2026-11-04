@@ -1,22 +1,23 @@
+import { NavLink } from "react-router";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { sections, icons } from "./sections.js";
 
-export default function Sidebar({ section, data, admin, editor, navigate, onHelp }) {
+export default function Sidebar({ data, admin, editor, onHelp }) {
   return (
     <aside className="sidebar">
       <span className="eyebrow">BIBLIOTEKA</span>
       {Object.entries(sections).map(([key, name]) => {
         const NavIcon = icons[key];
         return (
-          <button
-            className={section === key ? "selected" : ""}
+          <NavLink
+            className={({ isActive }) => isActive ? "selected" : ""}
             key={key}
-            onClick={() => navigate(key)}
+            to={`/${key}`}
           >
             <NavIcon size={19} />
             {name}
             <span>{data[key].length}</span>
-          </button>
+          </NavLink>
         );
       })}
       <div className="sidebar-info">

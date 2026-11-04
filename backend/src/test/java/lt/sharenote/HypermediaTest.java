@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import lt.sharenote.controller.*;
-import lt.sharenote.service.ShareNoteService;
+import lt.sharenote.service.OrganizationService;
+import lt.sharenote.service.GroupService;
+import lt.sharenote.service.NoteService;
 import static lt.sharenote.model.Models.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -19,24 +21,26 @@ class HypermediaTest {
     private final String note = group + "/notes/29";
 
     @BeforeEach void setup() {
-        var service = mock(ShareNoteService.class);
+        var organizations = mock(OrganizationService.class);
+        var groups = mock(GroupService.class);
+        var notes = mock(NoteService.class);
         var o = new Organization(7L, "University", "Shared notes");
         var g = new Group(13L, "Course", "Notes", 7L);
         var n = new Note(29L, "HTTP", "Methods", "REST", 13L, 5L, "MEDIUM");
-        when(service.organizations(null)).thenReturn(List.of(o));
-        when(service.groups(7, null)).thenReturn(List.of(g));
-        when(service.notes(7, 13, null)).thenReturn(List.of(n));
-        when(service.organization(7)).thenReturn(o);
-        when(service.group(7, 13)).thenReturn(g);
-        when(service.note(7, 13, 29)).thenReturn(n);
-        when(service.createOrganization(any())).thenReturn(o);
-        when(service.createGroup(eq(7L), any())).thenReturn(g);
-        when(service.createNote(eq(7L), eq(13L), any())).thenReturn(n);
-        when(service.updateOrganization(eq(7L), any())).thenReturn(o);
-        when(service.updateGroup(eq(7L), eq(13L), any())).thenReturn(g);
-        when(service.updateNote(eq(7L), eq(13L), eq(29L), any())).thenReturn(n);
-        mvc = MockMvcBuilders.standaloneSetup(new OrganizationController(service),
-                new NestedGroupController(service), new NestedNoteController(service)).build();
+        when(organizations.organizations(null)).thenReturn(List.of(o));
+        when(groups.groups(7, null)).thenReturn(List.of(g));
+        when(notes.notes(7, 13, null)).thenReturn(List.of(n));
+        when(organizations.organization(7)).thenReturn(o);
+        when(groups.group(7, 13)).thenReturn(g);
+        when(notes.note(7, 13, 29)).thenReturn(n);
+        when(organizations.createOrganization(any())).thenReturn(o);
+        when(groups.createGroup(eq(7L), any())).thenReturn(g);
+        when(notes.createNote(eq(7L), eq(13L), any())).thenReturn(n);
+        when(organizations.updateOrganization(eq(7L), any())).thenReturn(o);
+        when(groups.updateGroup(eq(7L), eq(13L), any())).thenReturn(g);
+        when(notes.updateNote(eq(7L), eq(13L), eq(29L), any())).thenReturn(n);
+        mvc = MockMvcBuilders.standaloneSetup(new OrganizationController(organizations),
+                new NestedGroupController(groups), new NestedNoteController(notes, groups)).build();
     }
 
     @Test void listsAndDetailsExposeFullHierarchy() throws Exception {
